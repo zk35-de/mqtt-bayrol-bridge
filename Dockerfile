@@ -1,13 +1,15 @@
 FROM docker.io/library/golang:1.24-alpine AS builder
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
-ARG GOARM=
+ARG TARGETVARIANT
+ARG GOARM
 ARG VERSION=dev
 WORKDIR /build
 COPY bridge/go.mod bridge/go.sum ./
 RUN go mod download
 COPY bridge/*.go bridge/ui.html ./
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GOARM=${GOARM} go build -ldflags="-s -w -X main.version=${VERSION}" -o bridge .
+RUN export GOARM="${GOARM:-${TARGETVARIANT#v}}" && \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GOARM=${GOARM} go build -ldflags="-s -w -X main.version=${VERSION}" -o bridge .
 
 FROM docker.io/library/eclipse-mosquitto:2
 RUN apk add --no-cache openssl
