@@ -36,15 +36,26 @@ lokalen HA MQTT-Broker.
   Dafür gibt es Home Assistant.
 - **Firmware-Modifikation:** Das Gerät bleibt unverändert.
 
-## Wohin soll es langfristig gehen?
+## Roadmap
 
-1. **v0.1 MVP** – Stabil laufende Bridge, alle bekannten Topics verarbeitet, Tests vorhanden
-2. **v0.2 Public** – Sauber dokumentiert, GitHub-Release, Community kann andere
-   Bayrol-Modelle beitragen
-3. **v0.3 Discovery** – Automatische Erkennung der Seriennummer aus dem MQTT-Connect,
-   keine manuelle Config nötig
-4. **Offen** – pH-Kalibrierung (mV → pH) wenn Referenzpunkte bekannt,
-   Filterpumpen-Mapping vervollständigen
+### v0.1 – MVP
+Bridge läuft stabil, alle bekannten Topics verarbeitet, Tests vorhanden,
+E2E-Deployment bestätigt.
+
+### v0.2 – Konfigurierbar
+Eingebettete Web UI für MQTT-Verbindungsparameter (Bayrol-Broker, HA-Broker,
+Seriennummer, output_prefix). Kein YAML-Editierung nötig. Einfache Auth.
+Statusanzeige: Gerät verbunden? Letzte Topics?
+
+### v0.3 – Public Release
+Sauber dokumentiert, GitHub-Release, Community kann andere Bayrol-Modelle beitragen.
+Automatische Erkennung der Seriennummer aus dem MQTT-Connect (keine manuelle Config).
+
+### v1.0 – Endversion
+Vollständig selbstkonfigurierend: DNS-Hint in der UI, automatische Cert-Rotation
+sichtbar, pH-Kalibrierung (mV → pH Referenzpunkte eingebbar), vollständiges
+Boolean-Topic-Mapping (Filterpumpe, Dosierung, Betriebsmodi).
+Ein Container, ein `docker run`, fertig.
 
 ## Was dieses Projekt nicht ist
 
