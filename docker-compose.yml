@@ -1,0 +1,20 @@
+services:
+  mosquitto:
+    build: ./mosquitto
+    ports:
+      - "8883:8883"
+    volumes:
+      - ./mosquitto/bayrol.conf:/mosquitto/config/mosquitto.conf:ro
+      - certs:/mosquitto/certs
+    restart: unless-stopped
+
+  bridge:
+    build: ./bridge
+    depends_on:
+      - mosquitto
+    volumes:
+      - ./bridge/config.yaml:/config.yaml:ro
+    restart: unless-stopped
+
+volumes:
+  certs:
