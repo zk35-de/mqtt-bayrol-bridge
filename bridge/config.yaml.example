@@ -1,23 +1,23 @@
-# bayrol-bridge Konfiguration
-# Kopieren nach config.yaml und anpassen
+# bayrol-bridge configuration
+# Copy to config.yaml and adjust
 
 bayrol_broker:
-  host: localhost        # Mosquitto läuft im selben Container
+  host: localhost        # Mosquitto runs in the same container
   port: 1883
-  serial: "23ASE2-06017"
+  serial: "23XXX-XXXXX" # printed on device, format: 23ASE2-XXXXX
 
 ha_broker:
-  host: 192.168.1.x     # HA-Host IP
+  host: 192.168.1.x     # HA host IP
   port: 1883
   username: mqttuser
-  password: mqttha
+  password: your-mqtt-password
 
 output_prefix: bayrol/pool
-# Resultierende Topics: bayrol/pool/redox, bayrol/pool/ph, etc.
+# Resulting topics: bayrol/pool/redox, bayrol/pool/ph, etc.
 
 # discovery_prefix: homeassistant
-# HA MQTT Autodiscovery Prefix (default: homeassistant)
+# HA MQTT Autodiscovery prefix (default: homeassistant)
 
 web:
   port: 8080
-  # Web UI Port (default: 8080)
+  # Web UI port (default: 8080)
