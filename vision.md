@@ -1,64 +1,63 @@
 # Vision – bayrol-bridge
 
-## Wozu existiert dieses Projekt?
+## Why this exists
 
-Bayrol Automatic SALT Pool-Controller senden ihre Messdaten (pH, Redox, Salzgehalt,
-Temperatur, SE-Produktion) ausschließlich an die Bayrol Cloud. Lokal gibt es keinen
-dokumentierten, unterstützten Zugriff.
+The Bayrol Automatic SALT pool controller sends its sensor data (pH, redox, salt content,
+temperature, electrolysis production) exclusively to the Bayrol cloud. There is no
+documented, supported local access.
 
-bayrol-bridge fängt diesen Cloud-Traffic ab und leitet die Daten an einen lokalen
-MQTT-Broker (z.B. Home Assistant) weiter – ohne Cloud-Abhängigkeit, ohne
-Firmware-Modifikation, ohne physischen Eingriff am Gerät.
+bayrol-bridge intercepts this cloud traffic and forwards the data to a local MQTT broker
+(e.g. Home Assistant) — no cloud dependency, no firmware modification, no physical
+intervention on the device.
 
-## Welches Problem löst es?
+## What problem does it solve?
 
-- **Cloud-Abhängigkeit:** Wenn Bayrol den Dienst einstellt oder die API ändert, sind
-  alle Automationen tot. bayrol-bridge eliminiert diese Abhängigkeit.
-- **Datenschutz:** Pool-Nutzungsdaten (wann läuft die Pumpe, wann dosiert sie) gehen
-  nicht an einen Drittanbieter.
-- **Integration:** Home Assistant und andere lokale Systeme bekommen Echtzeit-Zugriff
-  auf alle Sensorwerte.
+- **Cloud dependency:** If Bayrol shuts down their service or changes the API, all
+  automations break. bayrol-bridge eliminates this dependency.
+- **Privacy:** Pool usage data (when the pump runs, when it doses) does not go to a
+  third party.
+- **Integration:** Home Assistant and other local systems get real-time access to all
+  sensor values.
 
-## Wie funktioniert es?
+## How it works
 
-Das Gerät validiert TLS-Zertifikate nicht. Ein DNS-Override leitet
-`mqtt1.bayrol-poolaccess.de` auf den Bridge-Host um. Dort läuft ein Mosquitto-Broker
-mit Self-Signed Cert – das Gerät verbindet sich ohne es zu merken. Die Go-Bridge
-liest die Rohdaten, transformiert sie in saubere Topics und publiziert sie an den
-lokalen HA MQTT-Broker.
+The device does not validate TLS certificates. A DNS override points
+`mqtt1.bayrol-poolaccess.de` to the bridge host. A Mosquitto broker runs there
+with a self-signed certificate — the device connects without noticing.
+The Go bridge reads the raw data, transforms it into clean topics, and publishes
+them to the local HA MQTT broker.
 
-## Was ist explizit außerhalb des Scopes?
+## What is explicitly out of scope?
 
-- **Steuerung des Geräts:** bayrol-bridge ist read-only. Keine Befehle ans Gerät.
-- **Andere Bayrol-Modelle:** Nur Automatic SALT getestet. Andere Modelle mögen
-  funktionieren, sind aber nicht das Ziel.
-- **Cloud-Replacement:** Kein Nachbau des Bayrol-Portals, keine App, kein Dashboard.
-  Dafür gibt es Home Assistant.
-- **Firmware-Modifikation:** Das Gerät bleibt unverändert.
+- **Device control:** bayrol-bridge is read-only. No commands to the device.
+- **Other Bayrol models:** Only Automatic SALT tested. Other models may work but
+  are not the target.
+- **Cloud replacement:** No reimplementation of the Bayrol portal, no app, no dashboard.
+  That is what Home Assistant is for.
+- **Firmware modification:** The device remains unchanged.
+
+## This is not a hack
+
+The device behaves exactly as it does with the cloud — it connects to an MQTT broker.
+We run that broker ourselves. No reverse engineering of the firmware. No injection of
+commands. The device is not aware of any difference. This is our right as the owner
+of the hardware.
 
 ## Roadmap
 
 ### v0.1 – MVP
-Bridge läuft stabil, alle bekannten Topics verarbeitet, Tests vorhanden,
-E2E-Deployment bestätigt.
+Bridge runs stably, all known topics handled, tests in place, E2E deployment confirmed.
 
-### v0.2 – Konfigurierbar
-Eingebettete Web UI für MQTT-Verbindungsparameter (Bayrol-Broker, HA-Broker,
-Seriennummer, output_prefix). Kein YAML-Editierung nötig. Einfache Auth.
-Statusanzeige: Gerät verbunden? Letzte Topics?
+### v0.2 – Configurable
+Embedded web UI for MQTT connection parameters (Bayrol broker, HA broker, serial number,
+output prefix). No YAML editing required. Simple auth. Status display: device connected?
+Last topics?
 
 ### v0.3 – Public Release
-Sauber dokumentiert, GitHub-Release, Community kann andere Bayrol-Modelle beitragen.
-Automatische Erkennung der Seriennummer aus dem MQTT-Connect (keine manuelle Config).
+Clean documentation, GitHub release, community can contribute other Bayrol models.
+Automatic serial number detection from the MQTT connect packet (no manual config).
 
-### v1.0 – Endversion
-Vollständig selbstkonfigurierend: DNS-Hint in der UI, automatische Cert-Rotation
-sichtbar, pH-Kalibrierung (mV → pH Referenzpunkte eingebbar), vollständiges
-Boolean-Topic-Mapping (Filterpumpe, Dosierung, Betriebsmodi).
-Ein Container, ein `docker run`, fertig.
-
-## Was dieses Projekt nicht ist
-
-Kein Hack, keine Sicherheitslücke, kein Angriff auf Bayrol. Das Gerät verhält sich
-exakt wie mit der Cloud – es verbindet sich zu einem MQTT-Broker. Wir betreiben
-diesen Broker selbst. Das ist unser gutes Recht.
+### v1.0 – Final form
+Fully self-configuring: DNS hint in the UI, automatic cert rotation visible,
+pH calibration (mV → pH reference points), complete boolean topic mapping
+(filter pump, dosing, operating modes). One container, one `docker run`, done.
