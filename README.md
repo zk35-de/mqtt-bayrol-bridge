@@ -105,20 +105,28 @@ cd bridge && go test ./...
 
 All topics are published to `<output_prefix>/` (default: `bayrol/pool/`).
 
-| Topic | Content | Unit |
-|---|---|---|
-| `temperatur_ref` | Calibration reference temperature (~1.3°C below display) | °C |
-| `redox` | Redox potential | mV |
-| `salzgehalt_pct` | Salt content | % (0–99) |
-| `se_produktion` | Electrolysis production | % |
-| `ph_mv` | pH electrode raw voltage | mV |
-| `se_betriebsstunden` | Electrolysis total runtime | h |
-| `filterpumpe` | Filter pump state | `ON` / `OFF` |
-| `ph` | pH value (from alert text, updated on alarm) | pH |
-| `temperatur` | Display temperature (from alert text, updated on alarm) | °C |
-| `salzgehalt_gpl` | Salt content (from alert text, updated on alarm) | g/l |
-| `alarm_subject` | Last alarm description | string |
-| `device_info` | Device info JSON | JSON |
+| Topic | Source | Content | Unit |
+|---|---|---|---|
+| `temperatur` | v/4.98 | Pool temperature (value ÷ 10) | °C |
+| `temperatur_ref` | v/1 | Calibration reference temperature | °C |
+| `redox` | v/4.82 | Redox potential | mV |
+| `salzgehalt` | v/4.100 | Salt content (value ÷ 10) | g/l |
+| `se_produktion` | v/4.92 | Electrolysis production | % |
+| `se_betriebsstunden` | v/4.176 | Electrolysis total runtime (minutes ÷ 60) | h |
+| `filterpumpe` | v/10 | Filter pump state (inferred from alarm list) | `ON` / `OFF` |
+| `ph` | v/4.182 | pH-related value – **topic mapping under investigation** (see #15, #16) | – |
+| `ph` | v/16 | pH value from alert text (updated on alarm) | pH |
+| `temperatur` | v/16 | Temperature from alert text (updated on alarm) | °C |
+| `salzgehalt_gpl` | v/16 | Salt content from alert text (updated on alarm) | g/l |
+| `redox_alert` | v/16 | Redox from alert text (updated on alarm) | mV |
+| `alarm_subject` | v/16 | Last alarm description | string |
+| `device_type` | v/2 | Device type name | string |
+| `device_serial` | v/2 | Device serial number | string |
+| `device_sw_version` | v/2 | Firmware version | string |
+
+> **Note on pH:** The exact MQTT topics for the live pH value are still being investigated
+> (issues [#15](../../issues/15), [#16](../../issues/16)). Values from alert messages (v/16)
+> are reliable but only update on alarm events.
 
 ## Tested devices
 
