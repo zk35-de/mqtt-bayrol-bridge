@@ -4,7 +4,13 @@ MQTT bridge for Bayrol Automatic SALT pool controllers. Intercepts the device's
 cloud MQTT connection and forwards processed sensor data to a local broker (e.g.
 Home Assistant) – no cloud dependency, no firmware modification.
 
-→ [vision.md](vision.md) for the why.
+## Local-first
+
+No cloud account. No firmware modification. No physical intervention on the device.
+The device continues to behave as if talking to the Bayrol cloud — you simply run
+that broker yourself.
+
+→ [vision.md](vision.md) for the full rationale.
 
 ## How it works
 
