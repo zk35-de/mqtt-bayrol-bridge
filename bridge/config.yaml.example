@@ -1,0 +1,16 @@
+# bayrol-bridge Konfiguration
+# Kopieren nach config.yaml und anpassen
+
+bayrol_broker:
+  host: mosquitto       # Docker-Service-Name (oder IP wenn extern)
+  port: 1883            # Interner Plain-Port von Mosquitto
+  serial: "23ASE2-06017"
+
+ha_broker:
+  host: 192.168.1.x     # HA-Host IP
+  port: 1883
+  username: mqttuser
+  password: mqttha
+
+output_prefix: bayrol/pool
+# Resultierende Topics: bayrol/pool/redox, bayrol/pool/ph, etc.
