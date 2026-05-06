@@ -1,0 +1,12 @@
+services:
+  mosquitto:
+    image: ""
+    build: ./mosquitto
+    volumes:
+      - ./mosquitto/bayrol.conf:/mosquitto/config/mosquitto.conf:ro
+
+  bridge:
+    image: ""
+    build: ./bridge
+    volumes:
+      - ./bridge/config.yaml:/config.yaml:ro
