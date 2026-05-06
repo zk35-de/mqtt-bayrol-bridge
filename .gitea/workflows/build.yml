@@ -35,24 +35,24 @@ jobs:
       - name: Login to Gitea Registry
         run: |
           echo "${{ secrets.BAYROLCI }}" | \
-            docker login git.zk35.de -u secalpha --password-stdin
+            podman login git.zk35.de -u secalpha --password-stdin
 
       - name: Build and push bridge
         run: |
           IMAGE=git.zk35.de/secalpha/bayrol-bridge
-          docker build -f bridge/Dockerfile \
+          podman build -f bridge/Dockerfile \
             -t ${IMAGE}:${{ github.sha }} \
             -t ${IMAGE}:latest \
             bridge/
-          docker push ${IMAGE}:${{ github.sha }}
-          docker push ${IMAGE}:latest
+          podman push ${IMAGE}:${{ github.sha }}
+          podman push ${IMAGE}:latest
 
       - name: Build and push mosquitto
         run: |
           IMAGE=git.zk35.de/secalpha/bayrol-bridge-mosquitto
-          docker build \
+          podman build \
             -t ${IMAGE}:${{ github.sha }} \
             -t ${IMAGE}:latest \
             mosquitto/
-          docker push ${IMAGE}:${{ github.sha }}
-          docker push ${IMAGE}:latest
+          podman push ${IMAGE}:${{ github.sha }}
+          podman push ${IMAGE}:latest
