@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -28,13 +26,6 @@ type Config struct {
 	} `yaml:"ha_broker"`
 	OutputPrefix string `yaml:"output_prefix"`
 }
-
-var (
-	rePH    = regexp.MustCompile(`pH\t: ([0-9.]+)`)
-	reTemp  = regexp.MustCompile(`Temp\.\t: ([0-9.]+)`)
-	reSalz  = regexp.MustCompile(`Salz\t: ([0-9.]+) g/l`)
-	reRedox = regexp.MustCompile(`Redox\t: ([0-9]+) mV`)
-)
 
 // numericVal extracts "v" field as string from Bayrol JSON {"t":"x","v":123,...}
 func numericVal(payload []byte) (string, bool) {
@@ -71,95 +62,8 @@ func (b *bridge) publish(subTopic, value string) {
 }
 
 func (b *bridge) handle(_ mqtt.Client, msg mqtt.Message) {
-	topic := msg.Topic()
-	payload := msg.Payload()
-
-	// Strip d02/<serial>/v/
-	vPrefix := "d02/" + b.serial + "/v/"
-	if !strings.HasPrefix(topic, vPrefix) {
-		return
-	}
-	id := strings.TrimPrefix(topic, vPrefix)
-
-	switch id {
-	case "1":
-		// Kalibrierungsreferenztemperatur
-		var m struct {
-			V string `json:"v"`
-		}
-		if err := json.Unmarshal(payload, &m); err == nil {
-			b.publish("temperatur_ref", m.V)
-		}
-
-	case "4.82":
-		if v, ok := numericVal(payload); ok {
-			b.publish("redox", v)
-		}
-
-	case "4.78":
-		if v, ok := numericVal(payload); ok {
-			b.publish("salzgehalt_pct", v)
-		}
-
-	case "4.92":
-		if v, ok := numericVal(payload); ok {
-			b.publish("se_produktion", v)
-		}
-
-	case "4.98":
-		if v, ok := numericVal(payload); ok {
-			b.publish("ph_mv", v)
-		}
-
-	case "4.176":
-		if v, ok := numericVal(payload); ok {
-			b.publish("se_betriebsstunden", v)
-		}
-
-	case "2":
-		// Device info – direkt weiterleiten
-		b.publish("device_info", string(payload))
-
-	case "10":
-		// Filterpumpe: "8.5" in Array → OFF
-		var m struct {
-			V []string `json:"v"`
-		}
-		if err := json.Unmarshal(payload, &m); err == nil {
-			state := "ON"
-			for _, id := range m.V {
-				if id == "8.5" {
-					state = "OFF"
-					break
-				}
-			}
-			b.publish("filterpumpe", state)
-		}
-
-	case "16":
-		// Alert-Text – parst pH, Temp, Salz, Redox und Betreff
-		var m struct {
-			Subject string `json:"subject"`
-			Text    string `json:"text"`
-		}
-		if err := json.Unmarshal(payload, &m); err != nil {
-			return
-		}
-		if m.Subject != "" {
-			b.publish("alarm_subject", m.Subject)
-		}
-		if ms := rePH.FindStringSubmatch(m.Text); len(ms) == 2 {
-			b.publish("ph", ms[1])
-		}
-		if ms := reTemp.FindStringSubmatch(m.Text); len(ms) == 2 {
-			b.publish("temperatur", ms[1])
-		}
-		if ms := reSalz.FindStringSubmatch(m.Text); len(ms) == 2 {
-			b.publish("salzgehalt_gpl", ms[1])
-		}
-		if ms := reRedox.FindStringSubmatch(m.Text); len(ms) == 2 {
-			b.publish("redox_alert", ms[1])
-		}
+	for _, pub := range transform(b.serial, msg.Topic(), msg.Payload()) {
+		b.publish(pub.SubTopic, pub.Value)
 	}
 }
 
@@ -210,14 +114,12 @@ func main() {
 		serial: cfg.BayrolBroker.Serial,
 	}
 
-	// Connect to HA MQTT first
 	haBroker := fmt.Sprintf("tcp://%s:%d", cfg.HABroker.Host, cfg.HABroker.Port)
 	log.Printf("connecting HA broker %s", haBroker)
 	b.ha = connect(haBroker, "bayrol-bridge-ha", cfg.HABroker.Username, cfg.HABroker.Password, func(c mqtt.Client) {
 		log.Println("HA broker connected")
 	})
 
-	// Connect to local Mosquitto (Bayrol-facing)
 	bayrolBroker := fmt.Sprintf("tcp://%s:%d", cfg.BayrolBroker.Host, cfg.BayrolBroker.Port)
 	subTopic := fmt.Sprintf("d02/%s/v/#", cfg.BayrolBroker.Serial)
 	log.Printf("connecting Bayrol broker %s, subscribing %s", bayrolBroker, subTopic)
