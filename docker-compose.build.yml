@@ -1,12 +1,8 @@
 services:
-  mosquitto:
+  bayrol-bridge:
     image: ""
-    build: ./mosquitto
-    volumes:
-      - ./mosquitto/bayrol.conf:/mosquitto/config/mosquitto.conf:ro
-
-  bridge:
-    image: ""
-    build: ./bridge
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
       - ./bridge/config.yaml:/config.yaml:ro

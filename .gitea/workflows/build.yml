@@ -37,22 +37,12 @@ jobs:
           echo "${{ secrets.BAYROLCI }}" | \
             podman login git.zk35.de -u secalpha --password-stdin
 
-      - name: Build and push bridge
+      - name: Build and push
         run: |
           IMAGE=git.zk35.de/secalpha/bayrol-bridge
-          podman build -f bridge/Dockerfile \
-            -t ${IMAGE}:${{ github.sha }} \
-            -t ${IMAGE}:latest \
-            bridge/
-          podman push ${IMAGE}:${{ github.sha }}
-          podman push ${IMAGE}:latest
-
-      - name: Build and push mosquitto
-        run: |
-          IMAGE=git.zk35.de/secalpha/bayrol-bridge-mosquitto
           podman build \
             -t ${IMAGE}:${{ github.sha }} \
             -t ${IMAGE}:latest \
-            mosquitto/
+            .
           podman push ${IMAGE}:${{ github.sha }}
           podman push ${IMAGE}:latest
