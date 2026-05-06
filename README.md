@@ -21,17 +21,11 @@ Bayrol device  →  DNS override: mqtt1.bayrol-poolaccess.de → bridge host
 - DNS override capability (AdGuard, Pi-hole, or router DNS)
 - Home Assistant with MQTT integration
 
-## Setup
+## Deployment (production)
 
-**1. Clone and configure**
+Images are built by CI and available in the Gitea registry.
 
-```bash
-git clone https://git.zk35.de/secalpha/bayrol-bridge
-cd bayrol-bridge
-cp bridge/config.yaml.example bridge/config.yaml
-```
-
-Edit `bridge/config.yaml`:
+**1. Create config.yaml**
 
 ```yaml
 bayrol_broker:
@@ -48,24 +42,65 @@ ha_broker:
 output_prefix: bayrol/pool
 ```
 
-**2. Start**
+**2. Download docker-compose.yml**
 
 ```bash
+curl -O https://git.zk35.de/secalpha/bayrol-bridge/raw/branch/main/docker-compose.yml
+```
+
+Or clone the repo – only `docker-compose.yml` and `config.yaml` are needed on the host.
+
+**3. Login to registry and start**
+
+```bash
+docker login git.zk35.de
+docker compose pull
 docker compose up -d
 ```
 
-Mosquitto generates its TLS certificate automatically on first start.
-Certificate is renewed automatically when less than 30 days remain.
+Mosquitto generates a self-signed TLS certificate on first start (auto-renewed when < 30 days remain).
 
-**3. DNS override**
+**4. DNS override**
 
-Point `mqtt1.bayrol-poolaccess.de` to your bridge host IP in AdGuard/Pi-hole.
+Point `mqtt1.bayrol-poolaccess.de` to the bridge host IP in AdGuard/Pi-hole.
 
-**4. Verify**
+AdGuard Home → Filters → DNS rewrites → Add:
+- Domain: `mqtt1.bayrol-poolaccess.de`
+- Answer: `<bridge-host-ip>`
+
+**5. Verify**
 
 ```bash
-docker compose logs -f mosquitto   # watch for device connect
+docker compose logs -f mosquitto   # watch for Bayrol device connect
 docker compose logs -f bridge      # watch for topic forwarding
+```
+
+Expected in mosquitto logs when device connects:
+```
+New client connected from 10.35.5.68 as ...
+```
+
+Expected in bridge logs when data flows:
+```
+Bayrol broker connected, subscribing
+```
+
+## Development
+
+```bash
+git clone https://git.zk35.de/secalpha/bayrol-bridge
+cd bayrol-bridge
+cp bridge/config.yaml.example bridge/config.yaml
+# edit bridge/config.yaml
+
+# build and run locally (skips registry images)
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d
+```
+
+Run tests:
+
+```bash
+cd bridge && go test ./...
 ```
 
 ## Output Topics

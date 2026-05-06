@@ -1,0 +1,111 @@
+package main
+
+import (
+	"encoding/json"
+	"regexp"
+	"strings"
+)
+
+var (
+	rePH    = regexp.MustCompile(`pH\t: ([0-9.]+)`)
+	reTemp  = regexp.MustCompile(`Temp\.\t: ([0-9.]+)`)
+	reSalz  = regexp.MustCompile(`Salz\t: ([0-9.]+) g/l`)
+	reRedox = regexp.MustCompile(`Redox\t: ([0-9]+) mV`)
+)
+
+// Publication is a single MQTT output message.
+type Publication struct {
+	SubTopic string
+	Value    string
+}
+
+// transform converts a Bayrol MQTT message into zero or more HA publications.
+// It is a pure function with no side-effects.
+func transform(serial, topic string, payload []byte) []Publication {
+	vPrefix := "d02/" + serial + "/v/"
+	if !strings.HasPrefix(topic, vPrefix) {
+		return nil
+	}
+	id := strings.TrimPrefix(topic, vPrefix)
+
+	switch id {
+	case "1":
+		var m struct {
+			V string `json:"v"`
+		}
+		if err := json.Unmarshal(payload, &m); err == nil && m.V != "" {
+			return []Publication{{"temperatur_ref", m.V}}
+		}
+
+	case "4.82":
+		if v, ok := numericVal(payload); ok {
+			return []Publication{{"redox", v}}
+		}
+
+	case "4.78":
+		if v, ok := numericVal(payload); ok {
+			return []Publication{{"salzgehalt_pct", v}}
+		}
+
+	case "4.92":
+		if v, ok := numericVal(payload); ok {
+			return []Publication{{"se_produktion", v}}
+		}
+
+	case "4.98":
+		if v, ok := numericVal(payload); ok {
+			return []Publication{{"ph_mv", v}}
+		}
+
+	case "4.176":
+		if v, ok := numericVal(payload); ok {
+			return []Publication{{"se_betriebsstunden", v}}
+		}
+
+	case "2":
+		return []Publication{{"device_info", string(payload)}}
+
+	case "10":
+		var m struct {
+			V []string `json:"v"`
+		}
+		if err := json.Unmarshal(payload, &m); err == nil {
+			state := "ON"
+			for _, item := range m.V {
+				if item == "8.5" {
+					state = "OFF"
+					break
+				}
+			}
+			return []Publication{{"filterpumpe", state}}
+		}
+
+	case "16":
+		var m struct {
+			Subject string `json:"subject"`
+			Text    string `json:"text"`
+		}
+		if err := json.Unmarshal(payload, &m); err != nil {
+			return nil
+		}
+		var pubs []Publication
+		if m.Subject != "" {
+			pubs = append(pubs, Publication{"alarm_subject", m.Subject})
+		}
+		if ms := rePH.FindStringSubmatch(m.Text); len(ms) == 2 {
+			pubs = append(pubs, Publication{"ph", ms[1]})
+		}
+		if ms := reTemp.FindStringSubmatch(m.Text); len(ms) == 2 {
+			pubs = append(pubs, Publication{"temperatur", ms[1]})
+		}
+		if ms := reSalz.FindStringSubmatch(m.Text); len(ms) == 2 {
+			pubs = append(pubs, Publication{"salzgehalt_gpl", ms[1]})
+		}
+		if ms := reRedox.FindStringSubmatch(m.Text); len(ms) == 2 {
+			pubs = append(pubs, Publication{"redox_alert", ms[1]})
+		}
+		return pubs
+	}
+
+	return nil
+}

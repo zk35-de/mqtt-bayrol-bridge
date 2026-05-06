@@ -15,7 +15,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.24"
 
       - name: Build
         working-directory: bridge
@@ -34,13 +34,25 @@ jobs:
 
       - name: Login to Gitea Registry
         run: |
-          echo "${{ secrets.REGISTRY_TOKEN }}" | \
-            docker login git.zk35.de -u ${{ secrets.REGISTRY_USER }} --password-stdin
+          echo "${{ secrets.BAYROLCI }}" | \
+            docker login git.zk35.de -u secalpha --password-stdin
 
-      - name: Build and push
+      - name: Build and push bridge
         run: |
-          IMAGE=git.zk35.de/zk35admin/bayrol-bridge
-          docker build -f bridge/Dockerfile -t ${IMAGE}:${{ github.sha }} bridge/
-          docker tag ${IMAGE}:${{ github.sha }} ${IMAGE}:latest
+          IMAGE=git.zk35.de/secalpha/bayrol-bridge
+          docker build -f bridge/Dockerfile \
+            -t ${IMAGE}:${{ github.sha }} \
+            -t ${IMAGE}:latest \
+            bridge/
+          docker push ${IMAGE}:${{ github.sha }}
+          docker push ${IMAGE}:latest
+
+      - name: Build and push mosquitto
+        run: |
+          IMAGE=git.zk35.de/secalpha/bayrol-bridge-mosquitto
+          docker build \
+            -t ${IMAGE}:${{ github.sha }} \
+            -t ${IMAGE}:latest \
+            mosquitto/
           docker push ${IMAGE}:${{ github.sha }}
           docker push ${IMAGE}:latest
