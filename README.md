@@ -15,26 +15,27 @@ Bayrol device  →  DNS override: mqtt1.bayrol-poolaccess.de → bridge host
                →  Home Assistant MQTT broker
 ```
 
+Single container: Mosquitto and the Go bridge run together.
+Mosquitto generates its TLS certificate automatically on first start.
+
 ## Requirements
 
-- Docker + Docker Compose
+- Docker / Podman + Compose
 - DNS override capability (AdGuard, Pi-hole, or router DNS)
 - Home Assistant with MQTT integration
 
 ## Deployment (production)
 
-Images are built by CI and available in the Gitea registry.
-
 **1. Create config.yaml**
 
 ```yaml
 bayrol_broker:
-  host: mosquitto
+  host: localhost         # Mosquitto runs in the same container
   port: 1883
-  serial: "YOUR-SERIAL"   # printed on device, format: 23ASE2-XXXXX
+  serial: "YOUR-SERIAL"  # printed on device, format: 23ASE2-XXXXX
 
 ha_broker:
-  host: 192.168.1.x       # HA host IP
+  host: 192.168.1.x      # HA host IP
   port: 1883
   username: mqttuser
   password: yourpassword
@@ -42,15 +43,24 @@ ha_broker:
 output_prefix: bayrol/pool
 ```
 
-**2. Download docker-compose.yml**
+**2. docker-compose.yml** (only this file + config.yaml needed on the host)
 
-```bash
-curl -O https://git.zk35.de/secalpha/bayrol-bridge/raw/branch/main/docker-compose.yml
+```yaml
+services:
+  bayrol-bridge:
+    image: git.zk35.de/secalpha/bayrol-bridge:latest
+    ports:
+      - "8883:8883"
+    volumes:
+      - ./config.yaml:/config.yaml:ro
+      - certs:/mosquitto/certs
+    restart: unless-stopped
+
+volumes:
+  certs:
 ```
 
-Or clone the repo – only `docker-compose.yml` and `config.yaml` are needed on the host.
-
-**3. Login to registry and start**
+**3. Start**
 
 ```bash
 docker login git.zk35.de
@@ -58,11 +68,7 @@ docker compose pull
 docker compose up -d
 ```
 
-Mosquitto generates a self-signed TLS certificate on first start (auto-renewed when < 30 days remain).
-
 **4. DNS override**
-
-Point `mqtt1.bayrol-poolaccess.de` to the bridge host IP in AdGuard/Pi-hole.
 
 AdGuard Home → Filters → DNS rewrites → Add:
 - Domain: `mqtt1.bayrol-poolaccess.de`
@@ -71,17 +77,12 @@ AdGuard Home → Filters → DNS rewrites → Add:
 **5. Verify**
 
 ```bash
-docker compose logs -f mosquitto   # watch for Bayrol device connect
-docker compose logs -f bridge      # watch for topic forwarding
+docker compose logs -f bayrol-bridge
 ```
 
-Expected in mosquitto logs when device connects:
+Expected when device connects:
 ```
 New client connected from 10.35.5.68 as ...
-```
-
-Expected in bridge logs when data flows:
-```
 Bayrol broker connected, subscribing
 ```
 
@@ -91,15 +92,12 @@ Bayrol broker connected, subscribing
 git clone https://git.zk35.de/secalpha/bayrol-bridge
 cd bayrol-bridge
 cp bridge/config.yaml.example bridge/config.yaml
-# edit bridge/config.yaml
+# edit bridge/config.yaml (host: localhost)
 
-# build and run locally (skips registry images)
+# build and run locally
 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d
-```
 
-Run tests:
-
-```bash
+# tests
 cd bridge && go test ./...
 ```
 

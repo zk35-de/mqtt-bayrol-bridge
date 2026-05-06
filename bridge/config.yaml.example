@@ -2,8 +2,8 @@
 # Kopieren nach config.yaml und anpassen
 
 bayrol_broker:
-  host: mosquitto       # Docker-Service-Name (oder IP wenn extern)
-  port: 1883            # Interner Plain-Port von Mosquitto
+  host: localhost        # Mosquitto läuft im selben Container
+  port: 1883
   serial: "23ASE2-06017"
 
 ha_broker:
