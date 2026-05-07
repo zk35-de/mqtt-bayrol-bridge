@@ -43,6 +43,7 @@ var sensorDefs = []sensorDef{
 	{"temperatur", "Pool Temperatur", "temperature", "°C", false},
 	{"temperatur_ref", "Pool Temperatur Referenz", "temperature", "°C", false},
 	{"ph", "Pool pH", "", "", false},
+	{"ph_minus", "Pool pH-Minus Dosierung", "", "", false},
 	{"redox", "Pool Redox", "", "mV", false},
 	{"salzgehalt", "Pool Salzgehalt", "", "g/l", false},
 	{"salzgehalt_gpl", "Pool Salzgehalt g/l (Alarm)", "", "g/l", false},

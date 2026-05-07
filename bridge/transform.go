@@ -45,12 +45,12 @@ func transform(serial, topic string, payload []byte) []Publication {
 		}
 
 	case "4.78":
-		// raw value 0-99 index; linear approximation: 99 ≈ 8 g/l (from reverse engineering)
+		// Excel: e_num_var_ph → pH-Wert × 10 (z.B. 74 = 7.4 pH)
 		var m map[string]interface{}
 		if err := json.Unmarshal(payload, &m); err == nil {
 			if raw, ok := m["v"].(float64); ok {
-				gpl := math.Round(raw*8.0/99.0*10) / 10
-				return []Publication{{"salzgehalt", strconv.FormatFloat(gpl, 'f', 1, 64)}}
+				ph := math.Round(raw/10.0*100) / 100
+				return []Publication{{"ph", strconv.FormatFloat(ph, 'f', 2, 64)}}
 			}
 		}
 
@@ -80,12 +80,12 @@ func transform(serial, topic string, payload []byte) []Publication {
 		}
 
 	case "4.182":
-		// community finding: v/4.182 = pH × 10
+		// Excel: e_num_var_ph_minus → pH-Minus-Dosiermenge (Einheit unbekannt, ÷10)
 		var m map[string]interface{}
 		if err := json.Unmarshal(payload, &m); err == nil {
 			if raw, ok := m["v"].(float64); ok {
-				ph := math.Round(raw/10.0*100) / 100
-				return []Publication{{"ph", strconv.FormatFloat(ph, 'f', 2, 64)}}
+				val := math.Round(raw/10.0*100) / 100
+				return []Publication{{"ph_minus", strconv.FormatFloat(val, 'f', 2, 64)}}
 			}
 		}
 

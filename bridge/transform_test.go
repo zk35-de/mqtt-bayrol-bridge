@@ -27,16 +27,16 @@ func TestTransform_Redox(t *testing.T) {
 	assertSingle(t, pubs, "redox", "750")
 }
 
-func TestTransform_Salzgehalt(t *testing.T) {
-	// raw=74 → 74/99*8 = 5.98 → rounded 6.0 g/l
+func TestTransform_PH_v478(t *testing.T) {
+	// Excel e_num_var_ph: raw=74 → 74/10 = 7.40 pH
 	pubs := transform(serial, topic("4.78"), []byte(`{"v":74}`))
-	assertSingle(t, pubs, "salzgehalt", "6.0")
+	assertSingle(t, pubs, "ph", "7.40")
 }
 
-func TestTransform_Salzgehalt_Low(t *testing.T) {
-	// raw=0 → 0.0 g/l
+func TestTransform_PH_v478_Low(t *testing.T) {
+	// raw=0 → 0.00 pH
 	pubs := transform(serial, topic("4.78"), []byte(`{"v":0}`))
-	assertSingle(t, pubs, "salzgehalt", "0.0")
+	assertSingle(t, pubs, "ph", "0.00")
 }
 
 func TestTransform_SEProduktion(t *testing.T) {
@@ -56,10 +56,10 @@ func TestTransform_SalzgehaltExact(t *testing.T) {
 	assertSingle(t, pubs, "salzgehalt", "6.0")
 }
 
-func TestTransform_PH(t *testing.T) {
-	// 73 / 10 = 7.30 pH (community finding: harb70/bayrolas5-nodered)
+func TestTransform_PHMinus(t *testing.T) {
+	// Excel e_num_var_ph_minus: pH-Minus-Dosiermenge ÷10
 	pubs := transform(serial, topic("4.182"), []byte(`{"v":73}`))
-	assertSingle(t, pubs, "ph", "7.30")
+	assertSingle(t, pubs, "ph_minus", "7.30")
 }
 
 func TestTransform_SEBetriebsstunden(t *testing.T) {
