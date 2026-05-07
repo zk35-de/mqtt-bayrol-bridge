@@ -65,15 +65,26 @@ jobs:
             .
           podman push ${IMAGE}:${{ steps.version.outputs.tag }}-arm64
 
+      - name: Build armv7 (Raspberry Pi 3)
+        run: |
+          IMAGE=git.zk35.de/secalpha/bayrol-bridge
+          podman build \
+            --platform linux/arm/v7 \
+            -t ${IMAGE}:${{ steps.version.outputs.tag }}-armv7 \
+            .
+          podman push ${IMAGE}:${{ steps.version.outputs.tag }}-armv7
+
       - name: Create and push manifest
         run: |
           IMAGE=git.zk35.de/secalpha/bayrol-bridge
           VERSION=${{ steps.version.outputs.tag }}
           podman manifest create ${IMAGE}:${VERSION} \
             ${IMAGE}:${VERSION}-amd64 \
-            ${IMAGE}:${VERSION}-arm64
+            ${IMAGE}:${VERSION}-arm64 \
+            ${IMAGE}:${VERSION}-armv7
           podman manifest push ${IMAGE}:${VERSION}
           podman manifest create ${IMAGE}:latest \
             ${IMAGE}:${VERSION}-amd64 \
-            ${IMAGE}:${VERSION}-arm64
+            ${IMAGE}:${VERSION}-arm64 \
+            ${IMAGE}:${VERSION}-armv7
           podman manifest push ${IMAGE}:latest
