@@ -90,12 +90,28 @@ func transform(serial, topic string, payload []byte) []Publication {
 		}
 
 	case "4.176":
-		if v, ok := numericVal(payload); ok {
-			return []Publication{{"se_betriebsstunden", v}}
+		// unit is minutes; convert to hours
+		var m map[string]interface{}
+		if err := json.Unmarshal(payload, &m); err == nil {
+			if raw, ok := m["v"].(float64); ok {
+				hours := int64(math.Round(raw / 60.0))
+				return []Publication{{"se_betriebsstunden", strconv.FormatInt(hours, 10)}}
+			}
 		}
 
 	case "2":
-		return []Publication{{"device_info", string(payload)}}
+		var info struct {
+			TypeName  string `json:"type_name"`
+			Serial    string `json:"serial_no"`
+			SWVersion string `json:"sw_version"`
+		}
+		if err := json.Unmarshal(payload, &info); err == nil {
+			return []Publication{
+				{"device_type", info.TypeName},
+				{"device_serial", info.Serial},
+				{"device_sw_version", info.SWVersion},
+			}
+		}
 
 	case "10":
 		var m struct {

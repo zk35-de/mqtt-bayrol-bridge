@@ -63,14 +63,33 @@ func TestTransform_PH(t *testing.T) {
 }
 
 func TestTransform_SEBetriebsstunden(t *testing.T) {
-	pubs := transform(serial, topic("4.176"), []byte(`{"v":1234}`))
-	assertSingle(t, pubs, "se_betriebsstunden", "1234")
+	// 1200 minutes / 60 = 20 hours
+	pubs := transform(serial, topic("4.176"), []byte(`{"v":1200}`))
+	assertSingle(t, pubs, "se_betriebsstunden", "20")
+}
+
+func TestTransform_SEBetriebsstunden_Round(t *testing.T) {
+	// 1342881 minutes / 60 = 22381.35 → 22381h
+	pubs := transform(serial, topic("4.176"), []byte(`{"v":1342881}`))
+	assertSingle(t, pubs, "se_betriebsstunden", "22381")
 }
 
 func TestTransform_DeviceInfo(t *testing.T) {
-	payload := `{"model":"AS5","fw":"1.0"}`
+	payload := `{"type_name":"Automatic SALT","serial_no":"23ASE2-06017","sw_version":"v1.53 (230524)"}`
 	pubs := transform(serial, topic("2"), []byte(payload))
-	assertSingle(t, pubs, "device_info", payload)
+	if len(pubs) != 3 {
+		t.Fatalf("expected 3 publications, got %d", len(pubs))
+	}
+	want := map[string]string{
+		"device_type":       "Automatic SALT",
+		"device_serial":     "23ASE2-06017",
+		"device_sw_version": "v1.53 (230524)",
+	}
+	for _, p := range pubs {
+		if want[p.SubTopic] != p.Value {
+			t.Errorf("subtopic %s: want %q got %q", p.SubTopic, want[p.SubTopic], p.Value)
+		}
+	}
 }
 
 func TestTransform_FilterpumpeON(t *testing.T) {

@@ -47,9 +47,12 @@ var sensorDefs = []sensorDef{
 	{"salzgehalt", "Pool Salzgehalt", "", "g/l", false},
 	{"salzgehalt_gpl", "Pool Salzgehalt g/l (Alarm)", "", "g/l", false},
 	{"se_produktion", "Pool SE Produktion", "", "%", false},
-	{"se_betriebsstunden", "Pool SE Betriebsstunden", "", "", false},
+	{"se_betriebsstunden", "Pool SE Betriebsstunden", "duration", "h", false},
 	{"alarm_subject", "Pool Alarm", "", "", false},
 	{"filterpumpe", "Pool Filterpumpe", "power", "", true},
+	{"device_type", "Gerätetyp", "", "", false},
+	{"device_serial", "Seriennummer", "", "", false},
+	{"device_sw_version", "Firmware", "", "", false},
 }
 
 func discoveryPayload(discoveryPrefix, serial, stateTopic, subTopic string, def sensorDef) (topic string, payload []byte, err error) {

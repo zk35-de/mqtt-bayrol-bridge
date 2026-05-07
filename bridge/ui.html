@@ -1025,10 +1025,11 @@ const Prism = (() => {
       salzgehalt:          { name: 'Salzgehalt',          unit: 'g/l'},
       salzgehalt_gpl:      { name: 'Salzgehalt (Alarm)',  unit: 'g/l'},
       se_produktion:       { name: 'SE Produktion',       unit: '%'  },
-      se_betriebsstunden:  { name: 'SE Betriebsstunden',  unit: ''   },
+      se_betriebsstunden:  { name: 'SE Betriebsstunden',  unit: 'h'  },
       filterpumpe:         { name: 'Filterpumpe',         unit: ''   },
       alarm_subject:       { name: 'Alarm',               unit: ''   },
     };
+    const DEVICE_KEYS = ['device_type', 'device_serial', 'device_sw_version'];
     const ORDER = Object.keys(LABELS);
 
     function relAge(iso) {
@@ -1067,7 +1068,7 @@ const Prism = (() => {
         const now = Date.now();
 
         const sorted = ORDER.filter(k => vals[k]).concat(
-          Object.keys(vals).filter(k => !ORDER.includes(k) && vals[k])
+          Object.keys(vals).filter(k => !ORDER.includes(k) && !DEVICE_KEYS.includes(k) && vals[k])
         );
 
         if (sorted.length === 0) {
@@ -1075,7 +1076,20 @@ const Prism = (() => {
           return;
         }
 
-        grid.innerHTML = sorted.map(key => {
+        // device info bar (shown if at least one device_* key exists)
+        let deviceHtml = '';
+        const devType = vals['device_type']?.value;
+        const devSerial = vals['device_serial']?.value;
+        const devFW = vals['device_sw_version']?.value;
+        if (devType || devSerial || devFW) {
+          deviceHtml = `<div style="display:flex;gap:1.5rem;flex-wrap:wrap;padding:0.6rem 0.9rem;margin-bottom:0.75rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);font-size:0.82rem;">
+            ${devType   ? `<span><span style="color:var(--muted)">Typ</span> <strong>${devType}</strong></span>` : ''}
+            ${devSerial ? `<span><span style="color:var(--muted)">S/N</span> <strong>${devSerial}</strong></span>` : ''}
+            ${devFW     ? `<span><span style="color:var(--muted)">FW</span> <strong>${devFW}</strong></span>` : ''}
+          </div>`;
+        }
+
+        const cardsHtml = sorted.map(key => {
           const entry = vals[key];
           const meta  = LABELS[key] || { name: key, unit: '' };
           const age   = Math.round((now - new Date(entry.updated_at)) / 1000);
@@ -1086,6 +1100,8 @@ const Prism = (() => {
             <div class="vc-age">${relAge(entry.updated_at)}</div>
           </div>`;
         }).join('');
+
+        grid.innerHTML = deviceHtml + `<div class="value-grid" style="display:contents">${cardsHtml}</div>`;
       } catch(e) {}
     }
 
