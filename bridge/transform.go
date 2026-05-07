@@ -60,8 +60,33 @@ func transform(serial, topic string, payload []byte) []Publication {
 		}
 
 	case "4.98":
-		if v, ok := numericVal(payload); ok {
-			return []Publication{{"ph_mv", v}}
+		// community finding (harb70/bayrolas5-nodered, same AS5 model): v/4.98 = temperature × 10
+		var m map[string]interface{}
+		if err := json.Unmarshal(payload, &m); err == nil {
+			if raw, ok := m["v"].(float64); ok {
+				temp := math.Round(raw/10.0*10) / 10
+				return []Publication{{"temperatur", strconv.FormatFloat(temp, 'f', 1, 64)}}
+			}
+		}
+
+	case "4.100":
+		// community finding: v/4.100 = salt content × 10 in g/l
+		var m map[string]interface{}
+		if err := json.Unmarshal(payload, &m); err == nil {
+			if raw, ok := m["v"].(float64); ok {
+				gpl := math.Round(raw/10.0*10) / 10
+				return []Publication{{"salzgehalt", strconv.FormatFloat(gpl, 'f', 1, 64)}}
+			}
+		}
+
+	case "4.182":
+		// community finding: v/4.182 = pH × 10
+		var m map[string]interface{}
+		if err := json.Unmarshal(payload, &m); err == nil {
+			if raw, ok := m["v"].(float64); ok {
+				ph := math.Round(raw/10.0*100) / 100
+				return []Publication{{"ph", strconv.FormatFloat(ph, 'f', 2, 64)}}
+			}
 		}
 
 	case "4.176":

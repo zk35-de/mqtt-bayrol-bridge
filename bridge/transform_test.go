@@ -44,9 +44,22 @@ func TestTransform_SEProduktion(t *testing.T) {
 	assertSingle(t, pubs, "se_produktion", "85")
 }
 
-func TestTransform_PHMV(t *testing.T) {
+func TestTransform_Temperatur(t *testing.T) {
+	// 185 / 10 = 18.5°C (community finding: harb70/bayrolas5-nodered, same AS5 model)
 	pubs := transform(serial, topic("4.98"), []byte(`{"v":185}`))
-	assertSingle(t, pubs, "ph_mv", "185")
+	assertSingle(t, pubs, "temperatur", "18.5")
+}
+
+func TestTransform_SalzgehaltExact(t *testing.T) {
+	// 60 / 10 = 6.0 g/l (community finding: harb70/bayrolas5-nodered)
+	pubs := transform(serial, topic("4.100"), []byte(`{"v":60}`))
+	assertSingle(t, pubs, "salzgehalt", "6.0")
+}
+
+func TestTransform_PH(t *testing.T) {
+	// 73 / 10 = 7.30 pH (community finding: harb70/bayrolas5-nodered)
+	pubs := transform(serial, topic("4.182"), []byte(`{"v":73}`))
+	assertSingle(t, pubs, "ph", "7.30")
 }
 
 func TestTransform_SEBetriebsstunden(t *testing.T) {
