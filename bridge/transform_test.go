@@ -27,9 +27,16 @@ func TestTransform_Redox(t *testing.T) {
 	assertSingle(t, pubs, "redox", "750")
 }
 
-func TestTransform_SalzgehaltPct(t *testing.T) {
-	pubs := transform(serial, topic("4.78"), []byte(`{"v":3}`))
-	assertSingle(t, pubs, "salzgehalt_pct", "3")
+func TestTransform_Salzgehalt(t *testing.T) {
+	// raw=74 → 74/99*8 = 5.98 → rounded 6.0 g/l
+	pubs := transform(serial, topic("4.78"), []byte(`{"v":74}`))
+	assertSingle(t, pubs, "salzgehalt", "6.0")
+}
+
+func TestTransform_Salzgehalt_Low(t *testing.T) {
+	// raw=0 → 0.0 g/l
+	pubs := transform(serial, topic("4.78"), []byte(`{"v":0}`))
+	assertSingle(t, pubs, "salzgehalt", "0.0")
 }
 
 func TestTransform_SEProduktion(t *testing.T) {

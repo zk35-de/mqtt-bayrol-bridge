@@ -45,10 +45,10 @@ var sensorDefs = []sensorDef{
 	{"ph", "Pool pH", "", "", false},
 	{"ph_mv", "Pool pH Spannung", "", "mV", false},
 	{"redox", "Pool Redox", "", "mV", false},
-	{"salzgehalt_pct", "Pool Salzgehalt", "", "%", false},
-	{"salzgehalt_gpl", "Pool Salzgehalt g/l", "", "g/l", false},
+	{"salzgehalt", "Pool Salzgehalt", "", "g/l", false},
+	{"salzgehalt_gpl", "Pool Salzgehalt g/l (Alarm)", "", "g/l", false},
 	{"se_produktion", "Pool SE Produktion", "", "%", false},
-	{"se_betriebsstunden", "Pool SE Betriebsstunden", "duration", "h", false},
+	{"se_betriebsstunden", "Pool SE Betriebsstunden", "", "", false},
 	{"alarm_subject", "Pool Alarm", "", "", false},
 	{"filterpumpe", "Pool Filterpumpe", "power", "", true},
 }

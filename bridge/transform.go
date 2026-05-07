@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"math"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -43,8 +45,13 @@ func transform(serial, topic string, payload []byte) []Publication {
 		}
 
 	case "4.78":
-		if v, ok := numericVal(payload); ok {
-			return []Publication{{"salzgehalt_pct", v}}
+		// raw value 0-99 index; linear approximation: 99 ≈ 8 g/l (from reverse engineering)
+		var m map[string]interface{}
+		if err := json.Unmarshal(payload, &m); err == nil {
+			if raw, ok := m["v"].(float64); ok {
+				gpl := math.Round(raw*8.0/99.0*10) / 10
+				return []Publication{{"salzgehalt", strconv.FormatFloat(gpl, 'f', 1, 64)}}
+			}
 		}
 
 	case "4.92":
