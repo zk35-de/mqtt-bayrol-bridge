@@ -24,7 +24,8 @@ type Config struct {
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
 	} `yaml:"ha_broker"`
-	OutputPrefix string `yaml:"output_prefix"`
+	OutputPrefix    string `yaml:"output_prefix"`
+	DiscoveryPrefix string `yaml:"discovery_prefix"`
 }
 
 // numericVal extracts "v" field as string from Bayrol JSON {"t":"x","v":123,...}
@@ -118,6 +119,7 @@ func main() {
 	log.Printf("connecting HA broker %s", haBroker)
 	b.ha = connect(haBroker, "bayrol-bridge-ha", cfg.HABroker.Username, cfg.HABroker.Password, func(c mqtt.Client) {
 		log.Println("HA broker connected")
+		b.publishDiscovery()
 	})
 
 	bayrolBroker := fmt.Sprintf("tcp://%s:%d", cfg.BayrolBroker.Host, cfg.BayrolBroker.Port)

@@ -14,3 +14,6 @@ ha_broker:
 
 output_prefix: bayrol/pool
 # Resultierende Topics: bayrol/pool/redox, bayrol/pool/ph, etc.
+
+# discovery_prefix: homeassistant
+# HA MQTT Autodiscovery Prefix (default: homeassistant)
