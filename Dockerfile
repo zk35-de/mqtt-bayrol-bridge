@@ -1,11 +1,12 @@
-FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.24-alpine AS builder
+FROM docker.io/library/golang:1.24-alpine AS builder
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
+ARG GOARM=
 WORKDIR /build
 COPY bridge/go.mod bridge/go.sum ./
 RUN go mod download
 COPY bridge/*.go ./
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-s -w" -o bridge .
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GOARM=${GOARM} go build -ldflags="-s -w" -o bridge .
 
 FROM docker.io/library/eclipse-mosquitto:2
 RUN apk add --no-cache openssl

@@ -52,6 +52,8 @@ jobs:
           IMAGE=git.zk35.de/secalpha/bayrol-bridge
           podman build \
             --platform linux/amd64 \
+            --build-arg TARGETOS=linux \
+            --build-arg TARGETARCH=amd64 \
             -t ${IMAGE}:${{ steps.version.outputs.tag }}-amd64 \
             .
           podman push ${IMAGE}:${{ steps.version.outputs.tag }}-amd64
@@ -61,6 +63,8 @@ jobs:
           IMAGE=git.zk35.de/secalpha/bayrol-bridge
           podman build \
             --platform linux/arm64 \
+            --build-arg TARGETOS=linux \
+            --build-arg TARGETARCH=arm64 \
             -t ${IMAGE}:${{ steps.version.outputs.tag }}-arm64 \
             .
           podman push ${IMAGE}:${{ steps.version.outputs.tag }}-arm64
@@ -70,6 +74,9 @@ jobs:
           IMAGE=git.zk35.de/secalpha/bayrol-bridge
           podman build \
             --platform linux/arm/v7 \
+            --build-arg TARGETOS=linux \
+            --build-arg TARGETARCH=arm \
+            --build-arg GOARM=7 \
             -t ${IMAGE}:${{ steps.version.outputs.tag }}-armv7 \
             .
           podman push ${IMAGE}:${{ steps.version.outputs.tag }}-armv7
