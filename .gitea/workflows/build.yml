@@ -32,17 +32,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up QEMU
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-user-static
+
       - name: Login to Gitea Registry
         run: |
           echo "${{ secrets.BAYROLCI }}" | \
             podman login git.zk35.de -u secalpha --password-stdin
 
-      - name: Build and push
+      - name: Build amd64
         run: |
           IMAGE=git.zk35.de/secalpha/bayrol-bridge
           podman build \
-            -t ${IMAGE}:${{ github.sha }} \
-            -t ${IMAGE}:latest \
+            --platform linux/amd64 \
+            -t ${IMAGE}:${{ github.sha }}-amd64 \
             .
-          podman push ${IMAGE}:${{ github.sha }}
-          podman push ${IMAGE}:latest
+          podman push ${IMAGE}:${{ github.sha }}-amd64
+
+      - name: Build arm64
+        run: |
+          IMAGE=git.zk35.de/secalpha/bayrol-bridge
+          podman build \
+            --platform linux/arm64 \
+            -t ${IMAGE}:${{ github.sha }}-arm64 \
+            .
+          podman push ${IMAGE}:${{ github.sha }}-arm64
+
+      - name: Create and push manifest
+        run: |
+          IMAGE=git.zk35.de/secalpha/bayrol-bridge
+          podman manifest create ${IMAGE}:${{ github.sha }} \
+            ${IMAGE}:${{ github.sha }}-amd64 \
+            ${IMAGE}:${{ github.sha }}-arm64
+          podman manifest push ${IMAGE}:${{ github.sha }}
+          podman manifest create ${IMAGE}:latest \
+            ${IMAGE}:${{ github.sha }}-amd64 \
+            ${IMAGE}:${{ github.sha }}-arm64
+          podman manifest push ${IMAGE}:latest
