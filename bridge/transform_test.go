@@ -11,72 +11,79 @@ func topic(id string) string {
 }
 
 func TestTransform_UnknownTopic(t *testing.T) {
-	pubs := transform(serial, "other/topic", []byte(`{}`))
-	if len(pubs) != 0 {
-		t.Fatalf("expected no publications, got %v", pubs)
+	s, pubs := transform("other/topic", []byte(`{}`))
+	if s != "" || len(pubs) != 0 {
+		t.Fatalf("expected empty serial and no publications, got serial=%q pubs=%v", s, pubs)
+	}
+}
+
+func TestTransform_SerialExtracted(t *testing.T) {
+	s, _ := transform(topic("1"), []byte(`{"v":"17.2"}`))
+	if s != serial {
+		t.Errorf("serial: want %q, got %q", serial, s)
 	}
 }
 
 func TestTransform_TemperaturRef(t *testing.T) {
-	pubs := transform(serial, topic("1"), []byte(`{"v":"17.2"}`))
+	_, pubs := transform(topic("1"), []byte(`{"v":"17.2"}`))
 	assertSingle(t, pubs, "temperatur_ref", "17.2")
 }
 
 func TestTransform_Redox(t *testing.T) {
-	pubs := transform(serial, topic("4.82"), []byte(`{"v":750}`))
+	_, pubs := transform(topic("4.82"), []byte(`{"v":750}`))
 	assertSingle(t, pubs, "redox", "750")
 }
 
 func TestTransform_PH_v478(t *testing.T) {
 	// Excel e_num_var_ph: raw=74 → 74/10 = 7.40 pH
-	pubs := transform(serial, topic("4.78"), []byte(`{"v":74}`))
+	_, pubs := transform(topic("4.78"), []byte(`{"v":74}`))
 	assertSingle(t, pubs, "ph", "7.40")
 }
 
 func TestTransform_PH_v478_Low(t *testing.T) {
 	// raw=0 → 0.00 pH
-	pubs := transform(serial, topic("4.78"), []byte(`{"v":0}`))
+	_, pubs := transform(topic("4.78"), []byte(`{"v":0}`))
 	assertSingle(t, pubs, "ph", "0.00")
 }
 
 func TestTransform_SEProduktion(t *testing.T) {
-	pubs := transform(serial, topic("4.92"), []byte(`{"v":85}`))
+	_, pubs := transform(topic("4.92"), []byte(`{"v":85}`))
 	assertSingle(t, pubs, "se_produktion", "85")
 }
 
 func TestTransform_Temperatur(t *testing.T) {
 	// 185 / 10 = 18.5°C (community finding: harb70/bayrolas5-nodered, same AS5 model)
-	pubs := transform(serial, topic("4.98"), []byte(`{"v":185}`))
+	_, pubs := transform(topic("4.98"), []byte(`{"v":185}`))
 	assertSingle(t, pubs, "temperatur", "18.5")
 }
 
 func TestTransform_SalzgehaltExact(t *testing.T) {
 	// 60 / 10 = 6.0 g/l (community finding: harb70/bayrolas5-nodered)
-	pubs := transform(serial, topic("4.100"), []byte(`{"v":60}`))
+	_, pubs := transform(topic("4.100"), []byte(`{"v":60}`))
 	assertSingle(t, pubs, "salzgehalt", "6.0")
 }
 
 func TestTransform_PHMinus(t *testing.T) {
 	// Excel e_num_var_ph_minus: pH-Minus-Dosiermenge ÷10
-	pubs := transform(serial, topic("4.182"), []byte(`{"v":73}`))
+	_, pubs := transform(topic("4.182"), []byte(`{"v":73}`))
 	assertSingle(t, pubs, "ph_minus", "7.30")
 }
 
 func TestTransform_SEBetriebsstunden(t *testing.T) {
 	// 1200 minutes / 60 = 20 hours
-	pubs := transform(serial, topic("4.176"), []byte(`{"v":1200}`))
+	_, pubs := transform(topic("4.176"), []byte(`{"v":1200}`))
 	assertSingle(t, pubs, "se_betriebsstunden", "20")
 }
 
 func TestTransform_SEBetriebsstunden_Round(t *testing.T) {
 	// 1342881 minutes / 60 = 22381.35 → 22381h
-	pubs := transform(serial, topic("4.176"), []byte(`{"v":1342881}`))
+	_, pubs := transform(topic("4.176"), []byte(`{"v":1342881}`))
 	assertSingle(t, pubs, "se_betriebsstunden", "22381")
 }
 
 func TestTransform_DeviceInfo(t *testing.T) {
 	payload := `{"type_name":"Automatic SALT","serial_no":"23ASE2-06017","sw_version":"v1.53 (230524)"}`
-	pubs := transform(serial, topic("2"), []byte(payload))
+	_, pubs := transform(topic("2"), []byte(payload))
 	if len(pubs) != 3 {
 		t.Fatalf("expected 3 publications, got %d", len(pubs))
 	}
@@ -93,12 +100,12 @@ func TestTransform_DeviceInfo(t *testing.T) {
 }
 
 func TestTransform_FilterpumpeON(t *testing.T) {
-	pubs := transform(serial, topic("10"), []byte(`{"v":["1.0","2.0"]}`))
+	_, pubs := transform(topic("10"), []byte(`{"v":["1.0","2.0"]}`))
 	assertSingle(t, pubs, "filterpumpe", "ON")
 }
 
 func TestTransform_FilterpumpeOFF(t *testing.T) {
-	pubs := transform(serial, topic("10"), []byte(`{"v":["1.0","8.5","2.0"]}`))
+	_, pubs := transform(topic("10"), []byte(`{"v":["1.0","8.5","2.0"]}`))
 	assertSingle(t, pubs, "filterpumpe", "OFF")
 }
 
@@ -107,7 +114,7 @@ func TestTransform_Alert_AllFields(t *testing.T) {
 		"subject": "Chlor-Alarm",
 		"text": "pH\t: 7.3\nTemp.\t: 18.5\nSalz\t: 4.2 g/l\nRedox\t: 750 mV"
 	}`
-	pubs := transform(serial, topic("16"), []byte(payload))
+	_, pubs := transform(topic("16"), []byte(payload))
 
 	want := map[string]string{
 		"alarm_subject":  "Chlor-Alarm",
@@ -132,7 +139,7 @@ func TestTransform_Alert_AllFields(t *testing.T) {
 
 func TestTransform_Alert_NoSubject(t *testing.T) {
 	payload := `{"subject":"","text":"pH\t: 7.1\nTemp.\t: 19.0\nSalz\t: 4.0 g/l\nRedox\t: 700 mV"}`
-	pubs := transform(serial, topic("16"), []byte(payload))
+	_, pubs := transform(topic("16"), []byte(payload))
 	for _, p := range pubs {
 		if p.SubTopic == "alarm_subject" {
 			t.Error("alarm_subject should not be published when subject is empty")
@@ -144,7 +151,7 @@ func TestTransform_Alert_NoSubject(t *testing.T) {
 }
 
 func TestTransform_Alert_InvalidJSON(t *testing.T) {
-	pubs := transform(serial, topic("16"), []byte(`not json`))
+	_, pubs := transform(topic("16"), []byte(`not json`))
 	if len(pubs) != 0 {
 		t.Fatalf("expected no publications on invalid JSON, got %v", pubs)
 	}

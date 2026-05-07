@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -14,9 +15,8 @@ import (
 
 type Config struct {
 	BayrolBroker struct {
-		Host   string `yaml:"host"`
-		Port   int    `yaml:"port"`
-		Serial string `yaml:"serial"`
+		Host string `yaml:"host"`
+		Port int    `yaml:"port"`
 	} `yaml:"bayrol_broker"`
 	HABroker struct {
 		Host     string `yaml:"host"`
@@ -33,12 +33,12 @@ type Config struct {
 		CertPath string `yaml:"cert_path"`
 	} `yaml:"mosquitto"`
 	Debug struct {
-		Enabled bool `yaml:"enabled"`
+		Enabled    bool `yaml:"enabled"`
+		RawLogSize int  `yaml:"raw_log_size"`
 	} `yaml:"debug"`
 }
 
 // applyEnvOverrides overlays environment variables on top of config file values.
-// All env vars are optional; unset vars leave the config unchanged.
 func applyEnvOverrides(cfg *Config) {
 	if v := os.Getenv("BAYROL_HOST"); v != "" {
 		cfg.BayrolBroker.Host = v
@@ -47,9 +47,6 @@ func applyEnvOverrides(cfg *Config) {
 		if p, err := strconv.Atoi(v); err == nil {
 			cfg.BayrolBroker.Port = p
 		}
-	}
-	if v := os.Getenv("BAYROL_SERIAL"); v != "" {
-		cfg.BayrolBroker.Serial = v
 	}
 	if v := os.Getenv("HA_HOST"); v != "" {
 		cfg.HABroker.Host = v
@@ -82,6 +79,11 @@ func applyEnvOverrides(cfg *Config) {
 	if v := os.Getenv("DEBUG"); v == "true" || v == "1" {
 		cfg.Debug.Enabled = true
 	}
+	if v := os.Getenv("DEBUG_RAW_LOG_SIZE"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			cfg.Debug.RawLogSize = n
+		}
+	}
 }
 
 // numericVal extracts "v" field as string from Bayrol JSON {"t":"x","v":123,...}
@@ -106,10 +108,32 @@ type bridge struct {
 	cfg    Config
 	ha     mqtt.Client
 	prefix string
-	serial string
-	store  *valueStore
-	status *connStatus
-	rawLog *rawLogger
+	// serial is learned from the first MQTT message; empty until then.
+	serialMu sync.RWMutex
+	serial   string
+	store    *valueStore
+	status   *connStatus
+	rawLog   *rawLogger
+}
+
+func (b *bridge) getSerial() string {
+	b.serialMu.RLock()
+	defer b.serialMu.RUnlock()
+	return b.serial
+}
+
+// learnSerial stores the serial on first call and returns true if newly learned.
+func (b *bridge) learnSerial(s string) bool {
+	if s == "" {
+		return false
+	}
+	b.serialMu.Lock()
+	defer b.serialMu.Unlock()
+	if b.serial == "" {
+		b.serial = s
+		return true
+	}
+	return false
 }
 
 func (b *bridge) publish(subTopic, value string) {
@@ -124,7 +148,12 @@ func (b *bridge) publish(subTopic, value string) {
 
 func (b *bridge) handle(_ mqtt.Client, msg mqtt.Message) {
 	b.rawLog.log(msg.Topic(), msg.Payload())
-	for _, pub := range transform(b.serial, msg.Topic(), msg.Payload()) {
+	serial, pubs := transform(msg.Topic(), msg.Payload())
+	if b.learnSerial(serial) {
+		log.Printf("serial learned from MQTT: %s", serial)
+		b.publishDiscovery()
+	}
+	for _, pub := range pubs {
 		b.publish(pub.SubTopic, pub.Value)
 	}
 }
@@ -178,14 +207,16 @@ func main() {
 	if cfg.Mosquitto.CertPath == "" {
 		cfg.Mosquitto.CertPath = "/mosquitto/certs/bayrol-server.crt"
 	}
+	if cfg.Debug.RawLogSize <= 0 {
+		cfg.Debug.RawLogSize = 200
+	}
 
 	b := &bridge{
 		cfg:    cfg,
 		prefix: cfg.OutputPrefix,
-		serial: cfg.BayrolBroker.Serial,
 		store:  newValueStore(),
 		status: &connStatus{startedAt: time.Now()},
-		rawLog: newRawLogger(cfg.Debug.Enabled),
+		rawLog: newRawLogger(cfg.Debug.Enabled, cfg.Debug.RawLogSize),
 	}
 
 	haBroker := fmt.Sprintf("tcp://%s:%d", cfg.HABroker.Host, cfg.HABroker.Port)
@@ -193,17 +224,19 @@ func main() {
 	b.ha = connect(haBroker, "bayrol-bridge-ha", cfg.HABroker.Username, cfg.HABroker.Password, func(c mqtt.Client) {
 		log.Println("HA broker connected")
 		b.status.setHA(true)
-		b.publishDiscovery()
+		// Discovery only if serial already known (reconnect case)
+		if b.getSerial() != "" {
+			b.publishDiscovery()
+		}
 	})
 
 	bayrolBroker := fmt.Sprintf("tcp://%s:%d", cfg.BayrolBroker.Host, cfg.BayrolBroker.Port)
-	subTopic := fmt.Sprintf("d02/%s/v/#", cfg.BayrolBroker.Serial)
-	log.Printf("connecting Bayrol broker %s, subscribing %s", bayrolBroker, subTopic)
+	log.Printf("connecting Bayrol broker %s", bayrolBroker)
 
 	connect(bayrolBroker, "bayrol-bridge-local", "", "", func(c mqtt.Client) {
-		log.Println("Bayrol broker connected, subscribing")
+		log.Println("Bayrol broker connected, subscribing d02/+/v/#")
 		b.status.setBayrol(true)
-		if t := c.Subscribe(subTopic, 0, b.handle); t.Wait() && t.Error() != nil {
+		if t := c.Subscribe("d02/+/v/#", 0, b.handle); t.Wait() && t.Error() != nil {
 			log.Printf("subscribe: %v", t.Error())
 		}
 	})

@@ -22,13 +22,16 @@ type Publication struct {
 }
 
 // transform converts a Bayrol MQTT message into zero or more HA publications.
-// It is a pure function with no side-effects.
-func transform(serial, topic string, payload []byte) []Publication {
-	vPrefix := "d02/" + serial + "/v/"
-	if !strings.HasPrefix(topic, vPrefix) {
-		return nil
+// Returns the serial extracted from the topic (may be empty on parse failure).
+// Pure function with no side-effects.
+func transform(topic string, payload []byte) (serial string, pubs []Publication) {
+	// topic format: d02/{serial}/v/{id}
+	parts := strings.SplitN(topic, "/", 4)
+	if len(parts) != 4 || parts[0] != "d02" || parts[2] != "v" {
+		return "", nil
 	}
-	id := strings.TrimPrefix(topic, vPrefix)
+	serial = parts[1]
+	id := parts[3]
 
 	switch id {
 	case "1":
@@ -36,12 +39,12 @@ func transform(serial, topic string, payload []byte) []Publication {
 			V string `json:"v"`
 		}
 		if err := json.Unmarshal(payload, &m); err == nil && m.V != "" {
-			return []Publication{{"temperatur_ref", m.V}}
+			pubs = []Publication{{"temperatur_ref", m.V}}
 		}
 
 	case "4.82":
 		if v, ok := numericVal(payload); ok {
-			return []Publication{{"redox", v}}
+			pubs = []Publication{{"redox", v}}
 		}
 
 	case "4.78":
@@ -50,13 +53,13 @@ func transform(serial, topic string, payload []byte) []Publication {
 		if err := json.Unmarshal(payload, &m); err == nil {
 			if raw, ok := m["v"].(float64); ok {
 				ph := math.Round(raw/10.0*100) / 100
-				return []Publication{{"ph", strconv.FormatFloat(ph, 'f', 2, 64)}}
+				pubs = []Publication{{"ph", strconv.FormatFloat(ph, 'f', 2, 64)}}
 			}
 		}
 
 	case "4.92":
 		if v, ok := numericVal(payload); ok {
-			return []Publication{{"se_produktion", v}}
+			pubs = []Publication{{"se_produktion", v}}
 		}
 
 	case "4.98":
@@ -65,7 +68,7 @@ func transform(serial, topic string, payload []byte) []Publication {
 		if err := json.Unmarshal(payload, &m); err == nil {
 			if raw, ok := m["v"].(float64); ok {
 				temp := math.Round(raw/10.0*10) / 10
-				return []Publication{{"temperatur", strconv.FormatFloat(temp, 'f', 1, 64)}}
+				pubs = []Publication{{"temperatur", strconv.FormatFloat(temp, 'f', 1, 64)}}
 			}
 		}
 
@@ -75,7 +78,7 @@ func transform(serial, topic string, payload []byte) []Publication {
 		if err := json.Unmarshal(payload, &m); err == nil {
 			if raw, ok := m["v"].(float64); ok {
 				gpl := math.Round(raw/10.0*10) / 10
-				return []Publication{{"salzgehalt", strconv.FormatFloat(gpl, 'f', 1, 64)}}
+				pubs = []Publication{{"salzgehalt", strconv.FormatFloat(gpl, 'f', 1, 64)}}
 			}
 		}
 
@@ -85,7 +88,7 @@ func transform(serial, topic string, payload []byte) []Publication {
 		if err := json.Unmarshal(payload, &m); err == nil {
 			if raw, ok := m["v"].(float64); ok {
 				val := math.Round(raw/10.0*100) / 100
-				return []Publication{{"ph_minus", strconv.FormatFloat(val, 'f', 2, 64)}}
+				pubs = []Publication{{"ph_minus", strconv.FormatFloat(val, 'f', 2, 64)}}
 			}
 		}
 
@@ -95,7 +98,7 @@ func transform(serial, topic string, payload []byte) []Publication {
 		if err := json.Unmarshal(payload, &m); err == nil {
 			if raw, ok := m["v"].(float64); ok {
 				hours := int64(math.Round(raw / 60.0))
-				return []Publication{{"se_betriebsstunden", strconv.FormatInt(hours, 10)}}
+				pubs = []Publication{{"se_betriebsstunden", strconv.FormatInt(hours, 10)}}
 			}
 		}
 
@@ -106,7 +109,7 @@ func transform(serial, topic string, payload []byte) []Publication {
 			SWVersion string `json:"sw_version"`
 		}
 		if err := json.Unmarshal(payload, &info); err == nil {
-			return []Publication{
+			pubs = []Publication{
 				{"device_type", info.TypeName},
 				{"device_serial", info.Serial},
 				{"device_sw_version", info.SWVersion},
@@ -125,7 +128,7 @@ func transform(serial, topic string, payload []byte) []Publication {
 					break
 				}
 			}
-			return []Publication{{"filterpumpe", state}}
+			pubs = []Publication{{"filterpumpe", state}}
 		}
 
 	case "16":
@@ -134,9 +137,8 @@ func transform(serial, topic string, payload []byte) []Publication {
 			Text    string `json:"text"`
 		}
 		if err := json.Unmarshal(payload, &m); err != nil {
-			return nil
+			return serial, nil
 		}
-		var pubs []Publication
 		if m.Subject != "" {
 			pubs = append(pubs, Publication{"alarm_subject", m.Subject})
 		}
@@ -152,8 +154,7 @@ func transform(serial, topic string, payload []byte) []Publication {
 		if ms := reRedox.FindStringSubmatch(m.Text); len(ms) == 2 {
 			pubs = append(pubs, Publication{"redox_alert", ms[1]})
 		}
-		return pubs
 	}
 
-	return nil
+	return serial, pubs
 }
