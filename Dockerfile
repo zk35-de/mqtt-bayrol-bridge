@@ -5,7 +5,7 @@ ARG GOARM=
 WORKDIR /build
 COPY bridge/go.mod bridge/go.sum ./
 RUN go mod download
-COPY bridge/*.go ./
+COPY bridge/*.go bridge/ui.html ./
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GOARM=${GOARM} go build -ldflags="-s -w" -o bridge .
 
 FROM docker.io/library/eclipse-mosquitto:2
