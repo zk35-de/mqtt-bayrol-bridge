@@ -2,6 +2,7 @@
 set -e
 CERTS=/mosquitto/certs
 mkdir -p "$CERTS"
+mkdir -p /data
 
 needs_cert() {
     [ ! -f "$CERTS/bayrol-server.crt" ] || \

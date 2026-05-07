@@ -946,14 +946,17 @@ details > div { padding: 0 var(--space-md) var(--space-md); }
 
       <!-- TAB: Debug -->
       <div class="tab-panel hidden" data-tab-panel="debug">
-        <div class="card">
-          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
-            <span style="font-size:0.9rem;font-weight:600">Raw-Topic-Logger</span>
-            <button class="btn" id="debug-toggle-btn" onclick="toggleDebug()">Aktivieren</button>
-            <span id="debug-status" style="font-size:0.8rem;color:var(--muted)">inaktiv</span>
+        <div class="card" style="margin-bottom:1rem">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.5rem">
+            <span style="font-size:0.9rem;font-weight:600">Datei-Logger</span>
+            <button class="btn" id="file-log-toggle-btn" onclick="toggleFileLog()">Aktivieren</button>
+            <span id="file-log-status" style="font-size:0.8rem;color:var(--muted)">inaktiv</span>
           </div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem">
-            Zeichnet alle eingehenden Bayrol MQTT-Topics auf (max. 200 Einträge, Ring-Buffer).
+          <div id="file-log-path" style="font-size:0.78rem;color:var(--muted)"></div>
+        </div>
+        <div class="card">
+          <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem">
+            Raw-Topic-Log <span style="font-size:0.78rem;font-weight:400;color:var(--muted)">(Ring-Buffer, immer aktiv)</span>
           </div>
           <div id="raw-log-container" style="overflow-x:auto">
             <table class="prism-table" id="raw-log-table">
@@ -1108,23 +1111,21 @@ const Prism = (() => {
           }
         }
 
-        // Debug-Status (#14)
-        updateDebugStatus(h.debug_enabled);
+        updateFileLogStatus(h.file_log_enabled);
       } catch(e) {}
     }
 
-    async function toggleDebug() {
+    async function toggleFileLog() {
       try {
         const r = await fetch('/api/debug/toggle', { method: 'POST' });
         const d = await r.json();
-        updateDebugStatus(d.enabled);
-        await loadRawLog();
+        updateFileLogStatus(d.file_log_enabled);
       } catch(e) {}
     }
 
-    function updateDebugStatus(enabled) {
-      const btn = document.getElementById('debug-toggle-btn');
-      const status = document.getElementById('debug-status');
+    function updateFileLogStatus(enabled) {
+      const btn = document.getElementById('file-log-toggle-btn');
+      const status = document.getElementById('file-log-status');
       if (!btn) return;
       btn.textContent = enabled ? 'Deaktivieren' : 'Aktivieren';
       status.textContent = enabled ? 'aktiv' : 'inaktiv';
@@ -1135,7 +1136,9 @@ const Prism = (() => {
       try {
         const r = await fetch('/api/debug/raw');
         const d = await r.json();
-        updateDebugStatus(d.enabled);
+        updateFileLogStatus(d.file_log_enabled);
+        const pathEl = document.getElementById('file-log-path');
+        if (pathEl && d.file_log_path) pathEl.textContent = `Pfad: ${d.file_log_path}`;
         const tbody = document.getElementById('raw-log-body');
         if (!d.entries || d.entries.length === 0) {
           tbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted);text-align:center">Keine Einträge.</td></tr>';
@@ -1237,8 +1240,7 @@ const Prism = (() => {
         if (r.ok) {
           fb.textContent = 'Gespeichert.';
           fb.className = 'feedback';
-          document.getElementById('restart-notice').style.display = 'block';
-          Prism.toast('Konfiguration gespeichert.', 'ok', 3000);
+          Prism.toast('Konfiguration gespeichert – Änderungen werden sofort übernommen.', 'ok', 4000);
         } else {
           fb.textContent = await r.text();
           fb.className = 'feedback err';
