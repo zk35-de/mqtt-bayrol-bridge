@@ -80,6 +80,8 @@ jobs:
           VERSION=${{ steps.version.outputs.tag }}
           podman manifest rm ${IMAGE}:${VERSION} 2>/dev/null || true
           podman manifest rm ${IMAGE}:latest 2>/dev/null || true
+          podman rmi --force ${IMAGE}:${VERSION} 2>/dev/null || true
+          podman rmi --force ${IMAGE}:latest 2>/dev/null || true
           podman manifest create ${IMAGE}:${VERSION} \
             ${IMAGE}:${VERSION}-amd64 \
             ${IMAGE}:${VERSION}-arm64 \
