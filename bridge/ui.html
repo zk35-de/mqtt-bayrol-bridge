@@ -885,6 +885,7 @@ details > div { padding: 0 var(--space-md) var(--space-md); }
       <div class="tab-items">
         <div class="tab-item active" data-tab="values">Live Werte</div>
         <div class="tab-item" data-tab="settings">Einstellungen</div>
+        <div class="tab-item" data-tab="debug">Debug</div>
       </div>
 
       <!-- TAB: Live Werte -->
@@ -927,6 +928,38 @@ details > div { padding: 0 var(--space-md) var(--space-md); }
             <span class="feedback" id="cfg-feedback"></span>
           </div>
           <div class="restart-notice" id="restart-notice">⚠ Neustart erforderlich um Änderungen zu übernehmen.</div>
+
+          <div class="section-header">DNS-Konfiguration</div>
+          <div style="font-size:0.82rem;color:var(--muted);line-height:1.6;padding:0.5rem 0">
+            Das Gerät muss <code style="background:var(--glass);padding:0.1em 0.4em;border-radius:4px">mqtt1.bayrol-poolaccess.de</code> auf diese Bridge zeigen.<br>
+            AdGuard / Pi-hole DNS Override: <code style="background:var(--glass);padding:0.1em 0.4em;border-radius:4px">mqtt1.bayrol-poolaccess.de → &lt;Bridge-IP&gt;</code><br>
+            Bridge Port: <strong>8883</strong> (TLS, selbstsigniertes Zertifikat – keine CA-Validierung nötig)
+          </div>
+
+          <div class="section-header">TLS-Zertifikat</div>
+          <div id="cert-info" style="font-size:0.82rem;color:var(--muted);padding:0.3rem 0">Lade…</div>
+        </div>
+      </div>
+
+      <!-- TAB: Debug -->
+      <div class="tab-panel hidden" data-tab-panel="debug">
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+            <span style="font-size:0.9rem;font-weight:600">Raw-Topic-Logger</span>
+            <button class="btn" id="debug-toggle-btn" onclick="toggleDebug()">Aktivieren</button>
+            <span id="debug-status" style="font-size:0.8rem;color:var(--muted)">inaktiv</span>
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem">
+            Zeichnet alle eingehenden Bayrol MQTT-Topics auf (max. 200 Einträge, Ring-Buffer).
+          </div>
+          <div id="raw-log-container" style="overflow-x:auto">
+            <table class="prism-table" id="raw-log-table">
+              <thead><tr><th>Zeit</th><th>Topic</th><th>Payload</th></tr></thead>
+              <tbody id="raw-log-body">
+                <tr><td colspan="3" style="color:var(--muted);text-align:center">Keine Einträge.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -1021,6 +1054,7 @@ const Prism = (() => {
       temperatur:          { name: 'Temperatur',          unit: '°C' },
       temperatur_ref:      { name: 'Temp. Referenz',      unit: '°C' },
       ph:                  { name: 'pH',                  unit: ''   },
+      ph_minus:            { name: 'pH-Minus Dosierung',  unit: ''   },
       redox:               { name: 'Redox',               unit: 'mV' },
       salzgehalt:          { name: 'Salzgehalt',          unit: 'g/l'},
       salzgehalt_gpl:      { name: 'Salzgehalt (Alarm)',  unit: 'g/l'},
@@ -1057,6 +1091,59 @@ const Prism = (() => {
         setDot('dot-ha', 'lbl-ha', h.ha_connected);
         setDot('dot-bayrol', 'lbl-bayrol', h.bayrol_connected);
         document.getElementById('uptime-badge').textContent = formatUptime(h.uptime_s);
+
+        // Cert-Expiry (#10)
+        const certEl = document.getElementById('cert-info');
+        if (certEl) {
+          if (h.cert_expires) {
+            const days = h.cert_days_left;
+            const color = days < 30 ? 'var(--warn)' : days < 7 ? 'var(--fehler)' : 'var(--ok)';
+            certEl.innerHTML = `Ablauf: <strong>${new Date(h.cert_expires).toLocaleDateString('de-DE')}</strong> <span style="color:${color}">noch ${days} Tage</span>`;
+          } else {
+            certEl.textContent = 'Zertifikat nicht lesbar (nur im Container verfügbar).';
+          }
+        }
+
+        // Debug-Status (#14)
+        updateDebugStatus(h.debug_enabled);
+      } catch(e) {}
+    }
+
+    async function toggleDebug() {
+      try {
+        const r = await fetch('/api/debug/toggle', { method: 'POST' });
+        const d = await r.json();
+        updateDebugStatus(d.enabled);
+        await loadRawLog();
+      } catch(e) {}
+    }
+
+    function updateDebugStatus(enabled) {
+      const btn = document.getElementById('debug-toggle-btn');
+      const status = document.getElementById('debug-status');
+      if (!btn) return;
+      btn.textContent = enabled ? 'Deaktivieren' : 'Aktivieren';
+      status.textContent = enabled ? 'aktiv' : 'inaktiv';
+      status.style.color = enabled ? 'var(--ok)' : 'var(--muted)';
+    }
+
+    async function loadRawLog() {
+      try {
+        const r = await fetch('/api/debug/raw');
+        const d = await r.json();
+        updateDebugStatus(d.enabled);
+        const tbody = document.getElementById('raw-log-body');
+        if (!d.entries || d.entries.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted);text-align:center">Keine Einträge.</td></tr>';
+          return;
+        }
+        // newest first
+        const rows = [...d.entries].reverse().map(e => {
+          const t = new Date(e.at).toLocaleTimeString('de-DE');
+          const payload = e.payload.length > 120 ? e.payload.slice(0, 120) + '…' : e.payload;
+          return `<tr><td style="white-space:nowrap;color:var(--muted)">${t}</td><td style="font-family:monospace;font-size:0.78rem">${e.topic}</td><td style="font-family:monospace;font-size:0.78rem;word-break:break-all">${payload}</td></tr>`;
+        }).join('');
+        tbody.innerHTML = rows;
       } catch(e) {}
     }
 
@@ -1167,6 +1254,11 @@ const Prism = (() => {
       loadConfig();
       setInterval(loadStatus, 10000);
       setInterval(loadValues, 10000);
+
+      // Debug-Tab: Refresh beim Tab-Wechsel
+      document.getElementById('main-tabs').addEventListener('prism:tab', e => {
+        if (e.detail.tab === 'debug') loadRawLog();
+      });
     });
   </script>
 </body>
