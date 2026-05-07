@@ -219,6 +219,9 @@ func main() {
 		rawLog: newRawLogger(cfg.Debug.Enabled, cfg.Debug.RawLogSize),
 	}
 
+	// Web-Server sofort starten – unabhängig von MQTT-Verbindungsstatus
+	go b.startWebServer(fmt.Sprintf(":%d", cfg.Web.Port), cfgPath)
+
 	haBroker := fmt.Sprintf("tcp://%s:%d", cfg.HABroker.Host, cfg.HABroker.Port)
 	log.Printf("connecting HA broker %s", haBroker)
 	b.ha = connect(haBroker, "bayrol-bridge-ha", cfg.HABroker.Username, cfg.HABroker.Password, func(c mqtt.Client) {
@@ -240,8 +243,6 @@ func main() {
 			log.Printf("subscribe: %v", t.Error())
 		}
 	})
-
-	go b.startWebServer(fmt.Sprintf(":%d", cfg.Web.Port), cfgPath)
 
 	log.Println("bridge running")
 	select {}
