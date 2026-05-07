@@ -36,8 +36,9 @@ type Config struct {
 		CertPath string `yaml:"cert_path" json:"cert_path"`
 	} `yaml:"mosquitto" json:"mosquitto"`
 	Debug struct {
-		Enabled    bool `yaml:"enabled"      json:"enabled"`
-		RawLogSize int  `yaml:"raw_log_size" json:"raw_log_size"`
+		FileEnabled bool   `yaml:"file_enabled"  json:"file_enabled"`
+		LogPath     string `yaml:"log_path"      json:"log_path"`
+		RawLogSize  int    `yaml:"raw_log_size"  json:"raw_log_size"`
 	} `yaml:"debug" json:"debug"`
 }
 
@@ -79,8 +80,11 @@ func applyEnvOverrides(cfg *Config) {
 	if v := os.Getenv("MOSQUITTO_CERT_PATH"); v != "" {
 		cfg.Mosquitto.CertPath = v
 	}
-	if v := os.Getenv("DEBUG"); v == "true" || v == "1" {
-		cfg.Debug.Enabled = true
+	if v := os.Getenv("DEBUG_FILE"); v == "true" || v == "1" {
+		cfg.Debug.FileEnabled = true
+	}
+	if v := os.Getenv("DEBUG_LOG_PATH"); v != "" {
+		cfg.Debug.LogPath = v
 	}
 	if v := os.Getenv("DEBUG_RAW_LOG_SIZE"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
@@ -108,15 +112,16 @@ func numericVal(payload []byte) (string, bool) {
 }
 
 type bridge struct {
-	cfg    Config
-	ha     mqtt.Client
-	prefix string
-	// serial is learned from the first MQTT message; empty until then.
+	cfg      Config
+	haMu     sync.RWMutex // protects ha
+	ha       mqtt.Client
+	prefix   string
 	serialMu sync.RWMutex
 	serial   string
 	store    *valueStore
 	status   *connStatus
 	rawLog   *rawLogger
+	fileLog  *fileLogger
 }
 
 func (b *bridge) getSerial() string {
@@ -142,7 +147,13 @@ func (b *bridge) learnSerial(s string) bool {
 func (b *bridge) publish(subTopic, value string) {
 	b.store.set(subTopic, value)
 	topic := b.prefix + "/" + subTopic
-	t := b.ha.Publish(topic, 0, true, value)
+	b.haMu.RLock()
+	ha := b.ha
+	b.haMu.RUnlock()
+	if ha == nil {
+		return
+	}
+	t := ha.Publish(topic, 0, true, value)
 	t.Wait()
 	if t.Error() != nil {
 		log.Printf("publish %s: %v", topic, t.Error())
@@ -151,6 +162,7 @@ func (b *bridge) publish(subTopic, value string) {
 
 func (b *bridge) handle(_ mqtt.Client, msg mqtt.Message) {
 	b.rawLog.log(msg.Topic(), msg.Payload())
+	b.fileLog.log(msg.Topic(), msg.Payload())
 	serial, pubs := transform(msg.Topic(), msg.Payload())
 	if b.learnSerial(serial) {
 		log.Printf("serial learned from MQTT: %s", serial)
@@ -159,6 +171,34 @@ func (b *bridge) handle(_ mqtt.Client, msg mqtt.Message) {
 	for _, pub := range pubs {
 		b.publish(pub.SubTopic, pub.Value)
 	}
+}
+
+// reconnectHA disconnects the current HA client and establishes a new one.
+// Runs in a goroutine to avoid blocking the caller.
+func (b *bridge) reconnectHA() {
+	b.haMu.RLock()
+	old := b.ha
+	b.haMu.RUnlock()
+
+	if old != nil && old.IsConnected() {
+		old.Disconnect(500)
+	}
+	b.status.setHA(false)
+
+	haBroker := fmt.Sprintf("tcp://%s:%d", b.cfg.HABroker.Host, b.cfg.HABroker.Port)
+	log.Printf("hot-reload: reconnecting HA broker %s", haBroker)
+
+	newHA := connect(haBroker, "bayrol-bridge-ha", b.cfg.HABroker.Username, b.cfg.HABroker.Password, func(c mqtt.Client) {
+		log.Println("HA broker reconnected")
+		b.status.setHA(true)
+		if b.getSerial() != "" {
+			b.publishDiscovery()
+		}
+	})
+
+	b.haMu.Lock()
+	b.ha = newHA
+	b.haMu.Unlock()
 }
 
 func connect(broker, clientID, user, pass string, onConnect mqtt.OnConnectHandler) mqtt.Client {
@@ -211,15 +251,19 @@ func main() {
 		cfg.Mosquitto.CertPath = "/mosquitto/certs/bayrol-server.crt"
 	}
 	if cfg.Debug.RawLogSize <= 0 {
-		cfg.Debug.RawLogSize = 200
+		cfg.Debug.RawLogSize = 50
+	}
+	if cfg.Debug.LogPath == "" {
+		cfg.Debug.LogPath = "/data/raw.log"
 	}
 
 	b := &bridge{
-		cfg:    cfg,
-		prefix: cfg.OutputPrefix,
-		store:  newValueStore(),
-		status: &connStatus{startedAt: time.Now()},
-		rawLog: newRawLogger(cfg.Debug.Enabled, cfg.Debug.RawLogSize),
+		cfg:     cfg,
+		prefix:  cfg.OutputPrefix,
+		store:   newValueStore(),
+		status:  &connStatus{startedAt: time.Now()},
+		rawLog:  newRawLogger(cfg.Debug.RawLogSize),
+		fileLog: newFileLogger(cfg.Debug.FileEnabled, cfg.Debug.LogPath),
 	}
 
 	// Web-Server sofort starten – unabhängig von MQTT-Verbindungsstatus
@@ -230,7 +274,6 @@ func main() {
 	b.ha = connect(haBroker, "bayrol-bridge-ha", cfg.HABroker.Username, cfg.HABroker.Password, func(c mqtt.Client) {
 		log.Println("HA broker connected")
 		b.status.setHA(true)
-		// Discovery only if serial already known (reconnect case)
 		if b.getSerial() != "" {
 			b.publishDiscovery()
 		}

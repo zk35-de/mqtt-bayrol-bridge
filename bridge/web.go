@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -78,7 +79,7 @@ func (cs *connStatus) get() (ha, bayrol bool, uptime time.Duration) {
 	return cs.haConnected, cs.bayrolConnected, time.Since(cs.startedAt)
 }
 
-// ── raw logger (ring buffer, #14/#19) ────────────────────────────────────────
+// ── raw logger (always-on ring buffer) ───────────────────────────────────────
 
 type rawEntry struct {
 	At      time.Time `json:"at"`
@@ -87,44 +88,26 @@ type rawEntry struct {
 }
 
 type rawLogger struct {
-	mu      sync.Mutex
-	enabled bool
-	buf     []rawEntry
-	size    int
-	head    int
-	count   int
+	mu    sync.Mutex
+	buf   []rawEntry
+	size  int
+	head  int
+	count int
 }
 
-func newRawLogger(enabled bool, size int) *rawLogger {
+func newRawLogger(size int) *rawLogger {
 	if size <= 0 {
 		size = 200
 	}
 	return &rawLogger{
-		enabled: enabled,
-		buf:     make([]rawEntry, size),
-		size:    size,
+		buf:  make([]rawEntry, size),
+		size: size,
 	}
-}
-
-func (r *rawLogger) isEnabled() bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return r.enabled
-}
-
-func (r *rawLogger) toggle() bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.enabled = !r.enabled
-	return r.enabled
 }
 
 func (r *rawLogger) log(topic string, payload []byte) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if !r.enabled {
-		return
-	}
 	r.buf[r.head] = rawEntry{At: time.Now(), Topic: topic, Payload: string(payload)}
 	r.head = (r.head + 1) % r.size
 	if r.count < r.size {
@@ -147,7 +130,46 @@ func (r *rawLogger) snapshot() []rawEntry {
 	return out
 }
 
-// ── cert expiry (#10) ─────────────────────────────────────────────────────────
+// ── file logger ───────────────────────────────────────────────────────────────
+
+type fileLogger struct {
+	mu      sync.Mutex
+	enabled bool
+	path    string
+}
+
+func newFileLogger(enabled bool, path string) *fileLogger {
+	return &fileLogger{enabled: enabled, path: path}
+}
+
+func (f *fileLogger) isEnabled() bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.enabled
+}
+
+func (f *fileLogger) toggle() bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.enabled = !f.enabled
+	return f.enabled
+}
+
+func (f *fileLogger) log(topic string, payload []byte) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if !f.enabled || f.path == "" {
+		return
+	}
+	fh, err := os.OpenFile(f.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer fh.Close()
+	fmt.Fprintf(fh, "%s %s %s\n", time.Now().UTC().Format(time.RFC3339), topic, payload)
+}
+
+// ── cert expiry ───────────────────────────────────────────────────────────────
 
 func certExpiry(certPath string) *time.Time {
 	data, err := os.ReadFile(certPath)
@@ -156,7 +178,6 @@ func certExpiry(certPath string) *time.Time {
 	}
 	block, _ := pem.Decode(data)
 	if block == nil {
-		// try DER
 		cert, err := x509.ParseCertificate(data)
 		if err != nil {
 			return nil
@@ -166,7 +187,6 @@ func certExpiry(certPath string) *time.Time {
 	}
 	cert, err := tls.X509KeyPair(data, data)
 	if err != nil {
-		// parse just the cert block
 		c, err2 := x509.ParseCertificate(block.Bytes)
 		if err2 != nil {
 			return nil
@@ -207,7 +227,7 @@ func (b *bridge) startWebServer(addr, cfgPath string) {
 			"ha_connected":     ha,
 			"bayrol_connected": bayrol,
 			"uptime_s":         int(uptime.Seconds()),
-			"debug_enabled":    b.rawLog.isEnabled(),
+			"file_log_enabled": b.fileLog.isEnabled(),
 			"version":          version,
 		}
 		if exp := certExpiry(b.cfg.Mosquitto.CertPath); exp != nil {
@@ -245,22 +265,44 @@ func (b *bridge) startWebServer(addr, cfgPath string) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		old := b.cfg
 		b.cfg = incoming
+
+		haChanged := incoming.HABroker.Host != old.HABroker.Host ||
+			incoming.HABroker.Port != old.HABroker.Port ||
+			incoming.HABroker.Username != old.HABroker.Username ||
+			incoming.HABroker.Password != old.HABroker.Password
+
+		prefixChanged := incoming.OutputPrefix != old.OutputPrefix
+
+		if haChanged {
+			log.Println("config: HA broker changed, reconnecting")
+			go b.reconnectHA()
+		}
+		if prefixChanged {
+			log.Printf("config: output prefix changed to %s", incoming.OutputPrefix)
+			b.prefix = incoming.OutputPrefix
+			if b.getSerial() != "" {
+				go b.publishDiscovery()
+			}
+		}
+
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	// #14: raw topic log
 	mux.HandleFunc("GET /api/debug/raw", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]any{
-			"enabled": b.rawLog.isEnabled(),
-			"entries": b.rawLog.snapshot(),
+			"file_log_enabled": b.fileLog.isEnabled(),
+			"file_log_path":    b.cfg.Debug.LogPath,
+			"entries":          b.rawLog.snapshot(),
 		})
 	})
 
 	mux.HandleFunc("POST /api/debug/toggle", func(w http.ResponseWriter, r *http.Request) {
-		enabled := b.rawLog.toggle()
-		log.Printf("raw logger: %v", enabled)
-		writeJSON(w, map[string]any{"enabled": enabled})
+		enabled := b.fileLog.toggle()
+		log.Printf("file logger: %v", enabled)
+		writeJSON(w, map[string]any{"file_log_enabled": enabled})
 	})
 
 	log.Printf("web ui listening on %s", addr)
