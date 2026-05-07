@@ -13,6 +13,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// version is set at build time via -ldflags="-X main.version=..."
+var version = "dev"
+
 type Config struct {
 	BayrolBroker struct {
 		Host string `yaml:"host" json:"host"`

@@ -876,7 +876,10 @@ details > div { padding: 0 var(--space-md) var(--space-md); }
         <div class="conn-bar" id="conn-bar">
           <div class="conn-item"><span class="status-dot" id="dot-ha"></span><span id="lbl-ha">HA…</span></div>
           <div class="conn-item"><span class="status-dot" id="dot-bayrol"></span><span id="lbl-bayrol">Bayrol…</span></div>
-          <div class="conn-item" style="margin-left:auto"><span class="badge" id="uptime-badge">–</span></div>
+          <div class="conn-item" style="margin-left:auto;display:flex;gap:0.5rem;align-items:center">
+            <span class="badge" id="version-badge" style="color:var(--muted);background:transparent;border-color:transparent">–</span>
+            <span class="badge" id="uptime-badge">–</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1091,6 +1094,7 @@ const Prism = (() => {
         setDot('dot-ha', 'lbl-ha', h.ha_connected);
         setDot('dot-bayrol', 'lbl-bayrol', h.bayrol_connected);
         document.getElementById('uptime-badge').textContent = formatUptime(h.uptime_s);
+        if (h.version) document.getElementById('version-badge').textContent = h.version;
 
         // Cert-Expiry (#10)
         const certEl = document.getElementById('cert-info');
