@@ -78,9 +78,7 @@ func (cs *connStatus) get() (ha, bayrol bool, uptime time.Duration) {
 	return cs.haConnected, cs.bayrolConnected, time.Since(cs.startedAt)
 }
 
-// ── raw logger (ring buffer, #14) ─────────────────────────────────────────────
-
-const rawLogSize = 200
+// ── raw logger (ring buffer, #14/#19) ────────────────────────────────────────
 
 type rawEntry struct {
 	At      time.Time `json:"at"`
@@ -91,13 +89,21 @@ type rawEntry struct {
 type rawLogger struct {
 	mu      sync.Mutex
 	enabled bool
-	buf     [rawLogSize]rawEntry
+	buf     []rawEntry
+	size    int
 	head    int
 	count   int
 }
 
-func newRawLogger(enabled bool) *rawLogger {
-	return &rawLogger{enabled: enabled}
+func newRawLogger(enabled bool, size int) *rawLogger {
+	if size <= 0 {
+		size = 200
+	}
+	return &rawLogger{
+		enabled: enabled,
+		buf:     make([]rawEntry, size),
+		size:    size,
+	}
 }
 
 func (r *rawLogger) isEnabled() bool {
@@ -120,8 +126,8 @@ func (r *rawLogger) log(topic string, payload []byte) {
 		return
 	}
 	r.buf[r.head] = rawEntry{At: time.Now(), Topic: topic, Payload: string(payload)}
-	r.head = (r.head + 1) % rawLogSize
-	if r.count < rawLogSize {
+	r.head = (r.head + 1) % r.size
+	if r.count < r.size {
 		r.count++
 	}
 }
@@ -135,7 +141,7 @@ func (r *rawLogger) snapshot() []rawEntry {
 	}
 	out := make([]rawEntry, n)
 	for i := range n {
-		idx := (r.head - n + i + rawLogSize) % rawLogSize
+		idx := (r.head - n + i + r.size) % r.size
 		out[i] = r.buf[idx]
 	}
 	return out

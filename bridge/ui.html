@@ -899,8 +899,8 @@ details > div { padding: 0 var(--space-md) var(--space-md); }
       <div class="tab-panel hidden" data-tab-panel="settings">
         <div class="card">
           <div class="section-header">Bayrol Gerät</div>
+          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem">Seriennummer wird automatisch aus dem MQTT-Topic gelernt.</div>
           <div class="field-row">
-            <div class="field"><label>Seriennummer</label><input type="text" id="cfg-serial"></div>
             <div class="field"><label>Port (intern)</label><input type="number" id="cfg-bayrol-port"></div>
           </div>
 
@@ -1196,7 +1196,6 @@ const Prism = (() => {
       try {
         const r = await fetch('/api/config');
         const c = await r.json();
-        document.getElementById('cfg-serial').value      = c.bayrol_broker?.serial || '';
         document.getElementById('cfg-bayrol-port').value = c.bayrol_broker?.port   || 1883;
         document.getElementById('cfg-ha-host').value     = c.ha_broker?.host       || '';
         document.getElementById('cfg-ha-port').value     = c.ha_broker?.port       || 1883;
@@ -1211,9 +1210,8 @@ const Prism = (() => {
     async function saveConfig() {
       const payload = {
         bayrol_broker: {
-          host:   'localhost',
-          port:   parseInt(document.getElementById('cfg-bayrol-port').value),
-          serial: document.getElementById('cfg-serial').value.trim(),
+          host: 'localhost',
+          port: parseInt(document.getElementById('cfg-bayrol-port').value),
         },
         ha_broker: {
           host:     document.getElementById('cfg-ha-host').value.trim(),
