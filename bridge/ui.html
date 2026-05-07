@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bayrol Bridge</title>
+  <style>
+/* PRISM UI v2.1.0 – secalpha/prism-ui */
+/* Bundle: alle Module konkateniert – @imports entfernt */
+
+
+/* ── prism-tokens.css ── */
+/* PRISM Design Tokens v2.0 – secalpha/prism-ui */
+/* Light/Dark Mode + Per-App Accent Override */
+
+/* ── Dark Mode (Default) ── */
+:root, [data-theme="dark"] {
+  --bg:    #04060f;
+  --bg2:   #080c1a;
+  --text:  #e8edf5;
+  --sub:   #64748b;
+  --accent:       #6366f1;
+  --accent-hover: #818cf8;
+  --cyan:         #06b6d4;
+  --ok:    #22c55e;
+  --warn:  #f59e0b;
+  --fehler: #ef4444;
+
+  --fg:      var(--text);
+  --muted:   var(--sub);
+  --primary: var(--accent);
+
+  --surface:  rgba(255,255,255,0.04);
+  --surface2: rgba(255,255,255,0.02);
+  --border:   rgba(255,255,255,0.1);
+
+  --glass:          rgba(255,255,255,0.04);
+  --glass-h:        rgba(255,255,255,0.075);
+  --glass-border:   rgba(255,255,255,0.1);
+  --glass-border-a: color-mix(in srgb, var(--accent) 45%, transparent);
+
+  --card-bg: linear-gradient(135deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.015) 100%);
+  --nav-bg:  rgba(4,6,15,0.85);
+
+  --shadow-card: 0 2px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.07);
+  --shadow-btn:  0 4px 16px color-mix(in srgb, var(--accent) 28%, transparent), inset 0 1px 0 rgba(255,255,255,0.14);
+
+  /* Aurora blob colors – überschreibbar per Theme/App */
+  --aurora-1: color-mix(in srgb, var(--accent) 18%, transparent);
+  --aurora-2: rgba(6,182,212,0.11);
+  --aurora-3: rgba(139,92,246,0.08);
+  /* Aurora opacity + color – default für prism-aurora.css */
+  --aurora-color: var(--accent);
+  --aurora-op-1: 0.18;
+  --aurora-op-2: 0.11;
+  --aurora-op-3: 0.08;
+
+  /* Semantische Farbpalette */
+  --indigo: #818cf8;
+  --blue:   #60a5fa;
+  --cyan:   #22d3ee;
+  --green:  #4ade80;
+  --yellow: #fbbf24;
+  --orange: #fb923c;
+  --red:    #f87171;
+  --pink:   #f472b6;
+  --purple: #c084fc;
+  --gray:   #94a3b8;
+
+  color-scheme: dark;
+}
+
+/* ── Light Mode ── */
+[data-theme="light"] {
+  --bg:    #f0f2f8;
+  --bg2:   #e6e9f2;
+  --text:  #1a1d2e;
+  --sub:   #64748b;
+
+  --surface:  rgba(0,0,0,0.04);
+  --surface2: rgba(0,0,0,0.02);
+  --border:   rgba(0,0,0,0.1);
+
+  --glass:          rgba(255,255,255,0.6);
+  --glass-h:        rgba(255,255,255,0.8);
+  --glass-border:   rgba(0,0,0,0.1);
+  --glass-border-a: color-mix(in srgb, var(--accent) 40%, transparent);
+
+  --card-bg: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.55) 100%);
+  --nav-bg:  rgba(240,242,248,0.88);
+
+  --shadow-card: 0 2px 20px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+  --shadow-btn:  0 4px 16px color-mix(in srgb, var(--accent) 22%, transparent), inset 0 1px 0 rgba(255,255,255,0.4);
+
+  --aurora-1: color-mix(in srgb, var(--accent) 10%, transparent);
+  --aurora-2: rgba(6,182,212,0.07);
+  --aurora-3: rgba(139,92,246,0.05);
+
+  /* Semantische Farbpalette (light) */
+  --indigo: #4f46e5;
+  --blue:   #2563eb;
+  --cyan:   #0891b2;
+  --green:  #16a34a;
+  --yellow: #d97706;
+  --orange: #ea580c;
+  --red:    #dc2626;
+  --pink:   #db2777;
+  --purple: #9333ea;
+  --gray:   #64748b;
+
+  color-scheme: light;
+}
+
+/* Auto-detect wenn kein data-theme gesetzt */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg:    #f0f2f8;
+    --bg2:   #e6e9f2;
+    --text:  #1a1d2e;
+    --sub:   #64748b;
+    --surface:  rgba(0,0,0,0.04);
+    --surface2: rgba(0,0,0,0.02);
+    --border:   rgba(0,0,0,0.1);
+    --glass:          rgba(255,255,255,0.6);
+    --glass-h:        rgba(255,255,255,0.8);
+    --glass-border:   rgba(0,0,0,0.1);
+    --glass-border-a: color-mix(in srgb, var(--accent) 40%, transparent);
+    --card-bg: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.55) 100%);
+    --nav-bg:  rgba(240,242,248,0.88);
+    --shadow-card: 0 2px 20px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+    --shadow-btn:  0 4px 16px color-mix(in srgb, var(--accent) 22%, transparent), inset 0 1px 0 rgba(255,255,255,0.4);
+    --aurora-1: color-mix(in srgb, var(--accent) 10%, transparent);
+    --aurora-2: rgba(6,182,212,0.07);
+    --aurora-3: rgba(139,92,246,0.05);
+    color-scheme: light;
+  }
+}
+
+/* ── Per-App Accent Overrides (Legacy – bevorzuge prism-themes.css) ── */
+.app-elplan    { --accent: #f59e0b; --accent-hover: #fbbf24; --aurora-2: color-mix(in srgb, var(--accent) 8%, transparent); }
+.app-itmap     { --accent: #06b6d4; --accent-hover: #22d3ee; --aurora-2: color-mix(in srgb, var(--accent) 12%, transparent); }
+.app-panelforge { --accent: #8b5cf6; --accent-hover: #a78bfa; --aurora-1: color-mix(in srgb, var(--accent) 20%, transparent); --aurora-2: rgba(99,102,241,0.10); }
+
+/* ── Typography + Spacing ── */
+:root {
+  --mono: 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+  --font: var(--mono);
+  /* --font-body: Fließtext-Font – per Theme überschreibbar, default Mono */
+  --font-body: var(--mono);
+  --font-size-base: 13px;
+  --line-height: 1.6;
+  --space-xs:  0.3rem;
+  --space-sm:  0.5rem;
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2rem;
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg:  10px;
+  --radius:     10px;
+  --radius-xl:  14px;
+  --radius-2xl: 16px;
+  --nav-height: 50px;
+}
+
+/* ── Mobile Font Scaling ── */
+@media (max-width: 768px) {
+  :root { --font-size-base: 14px; }
+}
+
+/* ── prism-base.css ── */
+/* PRISM Base – Reset + Body + Typography */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: var(--font-size-base); }
+
+a { color: inherit; text-decoration: none; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  /* --font-body: per Theme überschreibbar (z.B. system-ui für Lesbarkeit) */
+  /* --font (Mono) bleibt für Nav, Buttons, Badges, Code */
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 {
+  font-size: 1.05rem; margin-bottom: 1.2rem;
+  color: var(--text);
+  font-weight: 300; letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+h2 {
+  font-size: 0.75rem; margin-bottom: 0.8rem;
+  color: var(--sub); font-weight: 400;
+  text-transform: uppercase; letter-spacing: 0.16em;
+}
+h3 {
+  font-size: 0.68rem; margin-bottom: 0.6rem;
+  color: var(--sub); text-transform: uppercase; letter-spacing: 0.12em;
+}
+
+code {
+  font-family: var(--mono); font-size: 0.88em;
+  color: color-mix(in srgb, var(--accent) 90%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  padding: 0.1rem 0.32rem; border-radius: var(--radius-sm);
+}
+
+main {
+  position: relative; z-index: 1;
+  padding: var(--space-lg); max-width: 1400px; margin: 0 auto;
+}
+
+.muted { color: var(--sub); }
+.mt    { margin-top: var(--space-md); }
+.full-width { width: 100%; text-align: center; }
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+@media (max-width: 768px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ── prism-aurora.css ── */
+/* PRISM Aurora – Animierter Hintergrund (opt-in) */
+/* Issue #9: Use CSS custom properties --aurora-1/2/3 for blob colors */
+
+.aurora {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none; overflow: hidden;
+}
+.ab { position: absolute; border-radius: 50%; filter: blur(90px); }
+
+/* ── Intensity Control (from homeport) ── */
+/* WICHTIG: color-mix() erwartet <percentage>, keine <number>.
+   0.08 → 8%, 0.18 → 18%, 0.35 → 35% usw. */
+.aurora.intensity-subtle { --aurora-op-1: 8%;  --aurora-op-2: 5%;  --aurora-op-3: 4%;  }
+.aurora.intensity-medium { --aurora-op-1: 18%; --aurora-op-2: 11%; --aurora-op-3: 8%;  }
+.aurora.intensity-vivid  { --aurora-op-1: 35%; --aurora-op-2: 22%; --aurora-op-3: 16%; }
+
+.ab-1 {
+  width: 70vmax; height: 70vmax;
+  background: radial-gradient(circle, color-mix(in srgb, var(--aurora-1) var(--aurora-op-1, 100%), transparent) 0%, transparent 70%);
+  top: -25%; left: -20%;
+}
+.ab-2 {
+  width: 55vmax; height: 55vmax;
+  background: radial-gradient(circle, color-mix(in srgb, var(--aurora-2) var(--aurora-op-2, 100%), transparent) 0%, transparent 70%);
+  bottom: -15%; right: -15%;
+}
+.ab-3 {
+  width: 35vmax; height: 35vmax;
+  background: radial-gradient(circle, color-mix(in srgb, var(--aurora-3) var(--aurora-op-3, 100%), transparent) 0%, transparent 70%);
+  top: 45%; left: 35%;
+}
+
+/* ── Animation Control (from homeport) ── */
+
+/* Animation standardmäßig aus (nur wenn .animated gesetzt) */
+.aurora:not(.animated) .ab-1,
+.aurora:not(.animated) .ab-2,
+.aurora:not(.animated) .ab-3 {
+  animation: none !important;
+}
+
+/* Nur wenn .animated gesetzt */
+.aurora.animated .ab-1 { animation: drift-1 26s ease-in-out infinite; }
+.aurora.animated .ab-2 { animation: drift-2 32s ease-in-out infinite; }
+.aurora.animated .ab-3 { animation: drift-3 19s ease-in-out infinite; }
+
+@keyframes drift-1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%      { transform: translate(7%,4%) scale(1.06); }
+  66%      { transform: translate(-3%,7%) scale(0.96); }
+}
+@keyframes drift-2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  40%      { transform: translate(-5%,-3%) scale(1.09); }
+  70%      { transform: translate(3%,-7%) scale(0.93); }
+}
+@keyframes drift-3 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%      { transform: translate(-8%,5%) scale(1.14); }
+}
+
+/* ── Accessibility & Optimization (keep existing) ── */
+
+/* Issue #7: prefers-reduced-motion support for Aurora animations */
+@media (prefers-reduced-motion: reduce) {
+  .ab-1, .ab-2, .ab-3 {
+    animation: none !important;
+  }
+}
+
+/* Issue #11: Mobile GPU load reduction */
+@media (max-width: 768px) {
+  .ab { filter: blur(60px); }
+}
+
+/* ── prism-components.css ── */
+/* PRISM Components – Nav, Cards, Buttons, Badges, Forms, Tabs, Spinner, Status-Dot */
+
+/* ── Navigation ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; gap: 0.15rem;
+  /* Issue #11 + #15: safe-area insets via logical padding */
+  padding-block: env(safe-area-inset-top) 0;
+  padding-inline: max(var(--space-lg), env(safe-area-inset-left)) max(var(--space-lg), env(safe-area-inset-right));
+  height: calc(var(--nav-height) + env(safe-area-inset-top));
+  background: var(--nav-bg);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-bottom: 1px solid var(--glass-border);
+  font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.04em;
+}
+nav a {
+  color: var(--sub);
+  text-decoration: none;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+}
+nav a:hover   { color: var(--text); background: var(--glass); }
+nav a.active  { color: var(--accent); }
+
+.brand {
+  font-weight: 700; font-size: 0.9rem;
+  color: var(--text) !important;
+  letter-spacing: 0.14em;
+  /* Issue #15: physical margin-right → logical */
+  margin-inline-end: var(--space-md);
+  background: none !important;
+}
+.brand-sep {
+  color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* Nav action link (right-aligned) */
+nav .nav-action {
+  /* Issue #15: margin-left → margin-inline-start */
+  margin-inline-start: auto;
+  color: var(--accent) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.55rem;
+  font-size: 0.68rem;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+nav .nav-action:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+/* ── Glass Cards ── */
+.card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.015) 100%);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  padding: 1.2rem;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-block;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 75%, transparent) 0%, color-mix(in srgb, var(--cyan) 55%, transparent) 100%);
+  color: var(--text);
+  border: none;
+  padding: 0.48rem 1.1rem;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  font-family: var(--mono); font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.12em; text-decoration: none;
+  box-shadow: var(--shadow-btn);
+  transition: opacity 0.2s, transform 0.15s;
+  text-transform: uppercase;
+  /* Issue #11: Touch optimization */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover   { opacity: 0.88; transform: translateY(-1px); }
+.btn:active  { transform: translateY(0); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; pointer-events: none; }
+
+.btn-sm {
+  display: inline-block;
+  background: var(--glass);
+  color: var(--text);
+  border: 1px solid var(--glass-border);
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-md);
+  font-size: 0.7rem; font-family: var(--mono); letter-spacing: 0.06em;
+  text-decoration: none; cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  /* Issue #11: Touch optimization */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-sm:hover { border-color: var(--glass-border-a); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--sub);
+  border: 1px solid var(--glass-border);
+  padding: 0.48rem var(--space-md);
+  border-radius: var(--radius-xl);
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em;
+  text-decoration: none; cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  /* Issue #11: Touch optimization */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-outline:hover { border-color: var(--glass-border-a); color: var(--accent); }
+
+.btn-danger-sm {
+  background: transparent; color: var(--sub);
+  border: 1px solid transparent;
+  padding: 0.15rem 0.4rem; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 0.9rem; font-family: var(--mono);
+  transition: color 0.15s, border-color 0.15s;
+}
+.btn-danger-sm:hover { color: var(--fehler); border-color: rgba(239,68,68,0.4); }
+
+/* ── Badges ── */
+.badge {
+  font-size: 0.62rem; font-family: var(--mono);
+  padding: 0.1rem 0.45rem; border-radius: var(--radius-sm);
+  letter-spacing: 0.1em; font-weight: 600;
+}
+.badge.ok     { background: color-mix(in srgb, var(--ok) 12%, transparent);    color: var(--ok);     border: 1px solid color-mix(in srgb, var(--ok) 30%, transparent); }
+.badge.warn   { background: color-mix(in srgb, var(--warn) 12%, transparent);  color: var(--warn);   border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); }
+.badge.fehler { background: color-mix(in srgb, var(--fehler) 12%, transparent); color: var(--fehler); border: 1px solid color-mix(in srgb, var(--fehler) 30%, transparent); }
+
+/* ── Version Badge (Issue #24) ── */
+.version-badge {
+  font-size: 0.6rem; font-family: var(--mono);
+  padding: 0.1rem 0.4rem; border-radius: var(--radius-sm);
+  letter-spacing: 0.08em; font-weight: 600;
+  color: var(--sub);
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  cursor: default; user-select: none;
+}
+.version-badge[data-update="true"] {
+  color: var(--fehler);
+  border-color: color-mix(in srgb, var(--fehler) 35%, transparent);
+  background: color-mix(in srgb, var(--fehler) 8%, transparent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--fehler) 25%, transparent);
+}
+.version-badge[data-update="true"]::after {
+  content: ' ●';
+  color: var(--fehler);
+}
+
+/* ── Forms ── */
+input[type="text"], input[type="url"], input[type="password"],
+input[type="number"], input[type="email"], select, textarea {
+  background: var(--glass); color: var(--text);
+  border: 1px solid var(--glass-border);
+  padding: 0.4rem 0.6rem; border-radius: var(--radius-md);
+  font-family: var(--mono); font-size: 0.82rem;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* Issue #8: Keyboard-only focus indicators with focus-visible */
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+.btn:focus-visible, a:focus-visible, .btn-sm:focus-visible,
+.btn-outline:focus-visible, .btn-danger-sm:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: 2px;
+}
+
+/* Remove focus outline for mouse users */
+:focus:not(:focus-visible) { outline: none; }
+
+.form-row {
+  display: flex; align-items: center; gap: 0.8rem;
+  /* Issue #15: margin-bottom → margin-block-end */
+  margin-block-end: 0.8rem;
+}
+.form-row label { min-width: 90px; color: var(--sub); font-size: 0.78rem; letter-spacing: 0.05em; }
+
+.checkbox-label {
+  display: flex; align-items: center; gap: 0.4rem;
+  color: var(--text); font-size: 0.82rem; cursor: pointer;
+}
+
+/* ── Details/Accordion ── */
+details {
+  background: linear-gradient(135deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.01) 100%);
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden;
+}
+details summary {
+  cursor: pointer; user-select: none;
+  padding: 0.75rem var(--space-md);
+  color: var(--text); list-style: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary:hover { background: var(--glass); }
+details[open] summary { border-bottom: 1px solid var(--glass-border); }
+details > div { padding: 0 var(--space-md) var(--space-md); }
+
+/* ── Meldungen (Alerts) ── */
+.meldung { padding: 0.6rem var(--space-md); border-radius: var(--radius-lg); font-size: 0.82rem; }
+.meldung.ok     { background: color-mix(in srgb, var(--ok) 8%, transparent);   border: 1px solid color-mix(in srgb, var(--ok) 25%, transparent); }
+.meldung.fehler { background: color-mix(in srgb, var(--fehler) 8%, transparent); border: 1px solid color-mix(in srgb, var(--fehler) 25%, transparent); }
+
+/* ── Tables ── */
+.prism-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.prism-table th, .prism-table td {
+  padding: 0.5rem 0.8rem;
+  /* Issue #15: text-align left → start */
+  text-align: start;
+  border-bottom: 1px solid var(--glass-border);
+}
+.prism-table th {
+  color: var(--sub); font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.66rem;
+}
+/* Issue #15: text-align right → end */
+.prism-table .num-cell { text-align: end; font-variant-numeric: tabular-nums; }
+.prism-table .ok-cell   { color: var(--ok); }
+.prism-table .warn-cell { color: var(--warn); }
+.prism-table .err-cell  { color: var(--fehler); }
+
+/* ── Tabs (Issue #12) ── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--glass-border);
+  margin-block-end: var(--space-md);
+}
+.tab-item {
+  position: relative;
+  padding: 0.45rem 0.9rem;
+  color: var(--sub); font-size: 0.7rem; font-family: var(--mono);
+  letter-spacing: 0.06em; cursor: pointer;
+  border: none; background: none;
+  transition: color 0.15s;
+}
+.tab-item:hover { color: var(--text); }
+.tab-item.active { color: var(--accent); }
+.tab-item.active::after {
+  content: '';
+  position: absolute; bottom: -1px;
+  inset-inline: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+
+/* ── Spinner / Loading (Issue #12) ── */
+.spinner {
+  display: inline-block;
+  width: 1.1rem; height: 1.1rem;
+  border: 2px solid var(--glass-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--glass) 25%,
+    color-mix(in srgb, var(--text) 6%, transparent) 50%,
+    var(--glass) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; opacity: 0.6; }
+  .skeleton { animation: none; }
+}
+
+/* ── Status-Dot (Issue #12) ── */
+.status-dot {
+  display: inline-block;
+  width: 0.55rem; height: 0.55rem;
+  border-radius: 50%;
+  background: var(--sub);
+  flex-shrink: 0;
+}
+.status-dot.ok   { background: var(--ok);     animation: pulse-ok 2s ease-in-out infinite; }
+.status-dot.warn { background: var(--warn); }
+.status-dot.dead { background: var(--fehler); }
+
+@keyframes pulse-ok {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 40%, transparent); }
+  50%       { box-shadow: 0 0 0 4px transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot.ok { animation: none; }
+}
+
+/* ── prism-toast.css ── */
+/* PRISM Toast – Notifications (Issue #12) */
+
+/* ── Toast Container ── */
+.toast-container {
+  position: fixed;
+  /* Issue #11/#15: safe-area + logical position */
+  bottom: max(var(--space-lg), env(safe-area-inset-bottom));
+  inset-inline-end: var(--space-lg);
+  z-index: 9000;
+  display: flex; flex-direction: column; gap: var(--space-sm);
+  pointer-events: none;
+}
+
+/* ── Toast ── */
+.toast {
+  pointer-events: auto;
+  display: flex; align-items: center; gap: var(--space-sm);
+  padding: 0.55rem var(--space-md);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-h);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  font-family: var(--mono); font-size: 0.78rem;
+  color: var(--text);
+  min-width: 220px; max-width: 380px;
+  animation: toast-in 0.22s ease-out;
+}
+
+@keyframes toast-in {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Varianten ── */
+.toast.ok {
+  border-color: color-mix(in srgb, var(--ok) 35%, transparent);
+  background: color-mix(in srgb, var(--ok) 8%, var(--glass-h));
+}
+.toast.ok::before {
+  content: '\2713';
+  color: var(--ok); font-weight: 700; flex-shrink: 0;
+}
+
+.toast.warn {
+  border-color: color-mix(in srgb, var(--warn) 35%, transparent);
+  background: color-mix(in srgb, var(--warn) 8%, var(--glass-h));
+}
+.toast.warn::before {
+  content: '!';
+  color: var(--warn); font-weight: 700; flex-shrink: 0;
+}
+
+.toast.fehler {
+  border-color: color-mix(in srgb, var(--fehler) 35%, transparent);
+  background: color-mix(in srgb, var(--fehler) 8%, var(--glass-h));
+}
+.toast.fehler::before {
+  content: '\2715';
+  color: var(--fehler); font-weight: 700; flex-shrink: 0;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}
+
+/* ── prism-themes.css ── */
+/* PRISM Themes v2.0 – secalpha/prism-ui */
+/* Vordefinierte Themes: <body class="theme-NAME"> */
+/* Jedes Theme überschreibt: --accent, --accent-hover, --aurora-*, --font-body */
+/* Kombinierbar mit data-theme="light|dark" */
+
+/* ──────────────────────────────────────────────
+   TECH  –  Indigo · Mono · Standard
+   Gedacht für: Secra-IT, itmap, technische Tools,
+   CLI-nahe UIs. Identisch mit :root-Default,
+   explizit setzbar.
+────────────────────────────────────────────── */
+.theme-tech {
+  --accent:       #6366f1;
+  --accent-hover: #818cf8;
+  --font-body:    var(--mono);
+  --aurora-1: color-mix(in srgb, var(--accent) 18%, transparent);
+  --aurora-2: rgba(6,182,212,0.11);
+  --aurora-3: rgba(139,92,246,0.08);
+}
+
+/* ──────────────────────────────────────────────
+   WARM  –  Orange · Sans-Serif · Menschlich
+   Gedacht für: Alfred, Andrea-UIs, Home-Assistants,
+   alles was nicht "Entwickler-Tool" ist.
+────────────────────────────────────────────── */
+.theme-warm {
+  --accent:       #f97316;
+  --accent-hover: #fb923c;
+  --font-body:    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --aurora-1: color-mix(in srgb, var(--accent) 16%, transparent);
+  --aurora-2: rgba(251,146,60,0.09);
+  --aurora-3: rgba(234,88,12,0.06);
+}
+
+/* ──────────────────────────────────────────────
+   AMBER  –  Amber · Mono · Handwerk
+   Gedacht für: elplan, panelforge, Installations-
+   und Planungstools. Technisch, aber wärmer.
+────────────────────────────────────────────── */
+.theme-amber {
+  --accent:       #f59e0b;
+  --accent-hover: #fbbf24;
+  --font-body:    var(--mono);
+  --aurora-1: color-mix(in srgb, var(--accent) 16%, transparent);
+  --aurora-2: rgba(245,158,11,0.10);
+  --aurora-3: rgba(180,83,9,0.06);
+}
+
+/* ──────────────────────────────────────────────
+   CYAN  –  Cyan · Mono · Netzwerk & Daten
+   Gedacht für: itmap, Netzwerk-Dashboards,
+   Monitoring, Infrastruktur-Tools.
+────────────────────────────────────────────── */
+.theme-cyan {
+  --accent:       #06b6d4;
+  --accent-hover: #22d3ee;
+  --font-body:    var(--mono);
+  --aurora-1: color-mix(in srgb, var(--accent) 16%, transparent);
+  --aurora-2: rgba(6,182,212,0.12);
+  --aurora-3: rgba(14,116,144,0.07);
+}
+
+/* ──────────────────────────────────────────────
+   GREEN  –  Grün · Sans-Serif · Natur & Gesundheit
+   Gedacht für: Garten-Tools, Health-UIs,
+   Umwelt-Dashboards – leserlich, beruhigend.
+────────────────────────────────────────────── */
+.theme-green {
+  --accent:       #22c55e;
+  --accent-hover: #4ade80;
+  --font-body:    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --aurora-1: color-mix(in srgb, var(--accent) 14%, transparent);
+  --aurora-2: rgba(34,197,94,0.09);
+  --aurora-3: rgba(21,128,61,0.06);
+}
+
+/* ──────────────────────────────────────────────
+   VIOLET  –  Violett · Mono · Kreativ & Ruhig
+   Gedacht für: panelforge, Konfigurations-UIs,
+   kreative Tools wo ein bisschen "Magie" passt.
+────────────────────────────────────────────── */
+.theme-violet {
+  --accent:       #8b5cf6;
+  --accent-hover: #a78bfa;
+  --font-body:    var(--mono);
+  --aurora-1: color-mix(in srgb, var(--accent) 18%, transparent);
+  --aurora-2: rgba(139,92,246,0.11);
+  --aurora-3: rgba(99,102,241,0.08);
+}
+
+/* ──────────────────────────────────────────────
+   ROSE  –  Rose · Mono · Alert & Monitoring
+   Gedacht für: Statusboards, kritische Systeme,
+   Incident-UIs. Signalfarbe ohne Aggressivität.
+────────────────────────────────────────────── */
+.theme-rose {
+  --accent:       #f43f5e;
+  --accent-hover: #fb7185;
+  --font-body:    var(--mono);
+  --aurora-1: color-mix(in srgb, var(--accent) 14%, transparent);
+  --aurora-2: rgba(244,63,94,0.09);
+  --aurora-3: rgba(159,18,57,0.06);
+}
+
+/* ──────────────────────────────────────────────
+   SLATE  –  Grau-Blau · Sans-Serif · Neutral
+   Gedacht für: Reports, Docs, Admin-Bereiche
+   wo Farbe ablenkt. Professionell, zurückhaltend.
+────────────────────────────────────────────── */
+.theme-slate {
+  --accent:       #64748b;
+  --accent-hover: #94a3b8;
+  --font-body:    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --aurora-1: color-mix(in srgb, var(--accent) 12%, transparent);
+  --aurora-2: rgba(100,116,139,0.08);
+  --aurora-3: rgba(51,65,85,0.05);
+}
+
+/* ──────────────────────────────────────────────
+   KITCHEN  –  Erdiges Amber · Serif · Kochen
+   Gedacht für: kochwerk – warme Atmosphäre,
+   Rezepte lesen, Serif für längere Texte.
+────────────────────────────────────────────── */
+.theme-kitchen {
+  --accent:       #d97706;
+  --accent-hover: #f59e0b;
+  --font-body:    Georgia, 'Palatino Linotype', Palatino, serif;
+  --line-height:  1.75;
+  --aurora-1: color-mix(in srgb, var(--accent) 16%, transparent);
+  --aurora-2: rgba(217,119,6,0.10);
+  --aurora-3: rgba(180,83,9,0.07);
+}
+
+/* ──────────────────────────────────────────────
+   NIGHT  –  Tiefviolett · Serif · Lesen & Diary
+   Gedacht für: diary, Notizen, Lese-UIs –
+   maximale Ruhe, Serif für Lesefluss.
+────────────────────────────────────────────── */
+.theme-night {
+  --accent:       #7c3aed;
+  --accent-hover: #8b5cf6;
+  --font-body:    Georgia, 'Palatino Linotype', Palatino, serif;
+  --line-height:  1.8;
+  --aurora-1: color-mix(in srgb, var(--accent) 14%, transparent);
+  --aurora-2: rgba(124,58,237,0.09);
+  --aurora-3: rgba(67,20,128,0.06);
+}
+
+  </style>
+  <style>
+    .value-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+    .value-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 1rem; }
+    .value-card .vc-name { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .value-card .vc-val { font-size: 1.5rem; font-weight: 600; color: var(--fg); }
+    .value-card .vc-unit { font-size: 0.85rem; color: var(--accent); margin-left: 0.2rem; }
+    .value-card .vc-age { font-size: 0.7rem; color: var(--muted); margin-top: 0.25rem; }
+    .value-card.stale { opacity: 0.5; }
+    .conn-bar { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    .conn-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
+    h1 { font-size: 1.4rem; font-weight: 700; margin: 0; }
+    .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    @media (max-width: 500px) { .field-row { grid-template-columns: 1fr; } }
+    .section-header { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 1rem 0 0.5rem; }
+    .actions { display: flex; align-items: center; gap: 1rem; margin-top: 1.25rem; }
+    .feedback { font-size: 0.85rem; color: var(--accent); }
+    .feedback.err { color: var(--danger, #f87171); }
+    .restart-notice { font-size: 0.8rem; color: var(--warn, #fbbf24); margin-top: 0.75rem; display: none; }
+  </style>
+</head>
+<body class="theme-cyan">
+  <div class="aurora animated intensity-low">
+    <div class="ab ab-1"></div><div class="ab ab-2"></div><div class="ab ab-3"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;max-width:900px;margin:0 auto;padding:1.5rem 1rem;">
+    <div class="header">
+      <div>
+        <h1>Bayrol Bridge</h1>
+        <div class="conn-bar" id="conn-bar">
+          <div class="conn-item"><span class="status-dot" id="dot-ha"></span><span id="lbl-ha">HA…</span></div>
+          <div class="conn-item"><span class="status-dot" id="dot-bayrol"></span><span id="lbl-bayrol">Bayrol…</span></div>
+          <div class="conn-item" style="margin-left:auto"><span class="badge" id="uptime-badge">–</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs" id="main-tabs">
+      <div class="tab-items">
+        <div class="tab-item active" data-tab="values">Live Werte</div>
+        <div class="tab-item" data-tab="settings">Einstellungen</div>
+      </div>
+
+      <!-- TAB: Live Werte -->
+      <div class="tab-panel" data-tab-panel="values">
+        <div class="value-grid" id="value-grid">
+          <div style="color:var(--muted);font-size:0.85rem">Warte auf Werte…</div>
+        </div>
+      </div>
+
+      <!-- TAB: Einstellungen -->
+      <div class="tab-panel hidden" data-tab-panel="settings">
+        <div class="card">
+          <div class="section-header">Bayrol Gerät</div>
+          <div class="field-row">
+            <div class="field"><label>Seriennummer</label><input type="text" id="cfg-serial"></div>
+            <div class="field"><label>Port (intern)</label><input type="number" id="cfg-bayrol-port"></div>
+          </div>
+
+          <div class="section-header">HA MQTT Broker</div>
+          <div class="field-row">
+            <div class="field"><label>Host</label><input type="text" id="cfg-ha-host"></div>
+            <div class="field"><label>Port</label><input type="number" id="cfg-ha-port"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Benutzername</label><input type="text" id="cfg-ha-user" autocomplete="off"></div>
+            <div class="field"><label>Passwort</label><input type="password" id="cfg-ha-pass" autocomplete="off"></div>
+          </div>
+
+          <div class="section-header">Topics</div>
+          <div class="field-row">
+            <div class="field"><label>Output Prefix</label><input type="text" id="cfg-prefix"></div>
+            <div class="field"><label>Discovery Prefix</label><input type="text" id="cfg-discovery"></div>
+          </div>
+
+          <div class="section-header">Web UI</div>
+          <div class="field" style="max-width:160px"><label>Port</label><input type="number" id="cfg-web-port"></div>
+
+          <div class="actions">
+            <button class="btn" onclick="saveConfig()">Speichern</button>
+            <span class="feedback" id="cfg-feedback"></span>
+          </div>
+          <div class="restart-notice" id="restart-notice">⚠ Neustart erforderlich um Änderungen zu übernehmen.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+/* PRISM UI v2.0 – JS Companion – secalpha/prism-ui */
+/* Vanilla JS, keine Dependencies. ~60 Zeilen. */
+
+const Prism = (() => {
+  'use strict';
+
+  /* ── Toast ── */
+  function toast(message, type = '', duration = 3500) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+
+    const el = document.createElement('div');
+    el.className = ['toast', type].filter(Boolean).join(' ');
+    el.textContent = message;
+    container.appendChild(el);
+
+    const dismiss = () => {
+      el.style.transition = 'opacity 0.25s, transform 0.25s';
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(8px)';
+      setTimeout(() => el.remove(), 260);
+    };
+
+    const timer = setTimeout(dismiss, duration);
+    el.addEventListener('click', () => { clearTimeout(timer); dismiss(); });
+
+    return el;
+  }
+
+  /* ── Tabs ── */
+  function initTabs(container) {
+    if (typeof container === 'string') {
+      container = document.querySelector(container);
+    }
+    if (!container) return;
+
+    const items = Array.from(container.querySelectorAll('.tab-item'));
+
+    items.forEach(item => {
+      item.addEventListener('click', () => {
+        items.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+
+        // Panel switching: data-tab="name" auf .tab-item,
+        // data-tab-panel="name" auf zugehörigem Panel
+        const target = item.dataset.tab;
+        if (target) {
+          const scope = container.closest('[data-tabs-scope]') || document;
+          scope.querySelectorAll('[data-tab-panel]').forEach(panel => {
+            panel.hidden = panel.dataset.tabPanel !== target;
+          });
+        }
+
+        container.dispatchEvent(new CustomEvent('prism:tab', {
+          bubbles: true,
+          detail: { tab: item.dataset.tab, el: item }
+        }));
+      });
+    });
+
+    // Erstes Panel initial sichtbar, Rest hidden
+    const firstActive = items.find(i => i.classList.contains('active')) || items[0];
+    if (firstActive?.dataset.tab) {
+      const scope = container.closest('[data-tabs-scope]') || document;
+      scope.querySelectorAll('[data-tab-panel]').forEach(panel => {
+        panel.hidden = panel.dataset.tabPanel !== firstActive.dataset.tab;
+      });
+    }
+  }
+
+  /* ── Auto-Init ── */
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.tabs').forEach(initTabs);
+  });
+
+  return { toast, initTabs };
+})();
+
+  </script>
+  <script>
+    const LABELS = {
+      temperatur:          { name: 'Temperatur',          unit: '°C' },
+      temperatur_ref:      { name: 'Temp. Referenz',      unit: '°C' },
+      ph:                  { name: 'pH',                  unit: ''   },
+      redox:               { name: 'Redox',               unit: 'mV' },
+      salzgehalt:          { name: 'Salzgehalt',          unit: 'g/l'},
+      salzgehalt_gpl:      { name: 'Salzgehalt (Alarm)',  unit: 'g/l'},
+      se_produktion:       { name: 'SE Produktion',       unit: '%'  },
+      se_betriebsstunden:  { name: 'SE Betriebsstunden',  unit: ''   },
+      filterpumpe:         { name: 'Filterpumpe',         unit: ''   },
+      alarm_subject:       { name: 'Alarm',               unit: ''   },
+    };
+    const ORDER = Object.keys(LABELS);
+
+    function relAge(iso) {
+      const s = Math.round((Date.now() - new Date(iso)) / 1000);
+      if (s < 5)  return 'gerade eben';
+      if (s < 60) return `vor ${s}s`;
+      if (s < 3600) return `vor ${Math.round(s/60)}min`;
+      return `vor ${Math.round(s/3600)}h`;
+    }
+
+    function formatUptime(s) {
+      if (s < 60)   return `${s}s`;
+      if (s < 3600) return `${Math.floor(s/60)}min`;
+      return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}min`;
+    }
+
+    async function loadStatus() {
+      try {
+        const r = await fetch('/health');
+        const h = await r.json();
+        const setDot = (id, lbl, ok) => {
+          document.getElementById(id).className = 'status-dot ' + (ok ? 'ok' : 'dead');
+          document.getElementById(lbl).textContent = ok ? lbl.replace('lbl-','').replace('ha','HA verbunden').replace('bayrol','Bayrol verbunden') : lbl.replace('lbl-','').replace('ha','HA getrennt').replace('bayrol','Bayrol getrennt');
+        };
+        setDot('dot-ha', 'lbl-ha', h.ha_connected);
+        setDot('dot-bayrol', 'lbl-bayrol', h.bayrol_connected);
+        document.getElementById('uptime-badge').textContent = formatUptime(h.uptime_s);
+      } catch(e) {}
+    }
+
+    async function loadValues() {
+      try {
+        const r = await fetch('/api/values');
+        const vals = await r.json();
+        const grid = document.getElementById('value-grid');
+        const now = Date.now();
+
+        const sorted = ORDER.filter(k => vals[k]).concat(
+          Object.keys(vals).filter(k => !ORDER.includes(k) && vals[k])
+        );
+
+        if (sorted.length === 0) {
+          grid.innerHTML = '<div style="color:var(--muted);font-size:0.85rem">Noch keine Werte empfangen.</div>';
+          return;
+        }
+
+        grid.innerHTML = sorted.map(key => {
+          const entry = vals[key];
+          const meta  = LABELS[key] || { name: key, unit: '' };
+          const age   = Math.round((now - new Date(entry.updated_at)) / 1000);
+          const stale = age > 300;
+          return `<div class="value-card${stale ? ' stale' : ''}">
+            <div class="vc-name">${meta.name}</div>
+            <div><span class="vc-val">${entry.value}</span><span class="vc-unit">${meta.unit}</span></div>
+            <div class="vc-age">${relAge(entry.updated_at)}</div>
+          </div>`;
+        }).join('');
+      } catch(e) {}
+    }
+
+    async function loadConfig() {
+      try {
+        const r = await fetch('/api/config');
+        const c = await r.json();
+        document.getElementById('cfg-serial').value      = c.bayrol_broker?.serial || '';
+        document.getElementById('cfg-bayrol-port').value = c.bayrol_broker?.port   || 1883;
+        document.getElementById('cfg-ha-host').value     = c.ha_broker?.host       || '';
+        document.getElementById('cfg-ha-port').value     = c.ha_broker?.port       || 1883;
+        document.getElementById('cfg-ha-user').value     = c.ha_broker?.username   || '';
+        document.getElementById('cfg-ha-pass').value     = c.ha_broker?.password   || '';
+        document.getElementById('cfg-prefix').value      = c.output_prefix         || 'bayrol/pool';
+        document.getElementById('cfg-discovery').value   = c.discovery_prefix      || 'homeassistant';
+        document.getElementById('cfg-web-port').value    = c.web?.port             || 8080;
+      } catch(e) {}
+    }
+
+    async function saveConfig() {
+      const payload = {
+        bayrol_broker: {
+          host:   'localhost',
+          port:   parseInt(document.getElementById('cfg-bayrol-port').value),
+          serial: document.getElementById('cfg-serial').value.trim(),
+        },
+        ha_broker: {
+          host:     document.getElementById('cfg-ha-host').value.trim(),
+          port:     parseInt(document.getElementById('cfg-ha-port').value),
+          username: document.getElementById('cfg-ha-user').value,
+          password: document.getElementById('cfg-ha-pass').value,
+        },
+        output_prefix:    document.getElementById('cfg-prefix').value.trim(),
+        discovery_prefix: document.getElementById('cfg-discovery').value.trim(),
+        web: { port: parseInt(document.getElementById('cfg-web-port').value) },
+      };
+      const fb = document.getElementById('cfg-feedback');
+      try {
+        const r = await fetch('/api/config', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (r.ok) {
+          fb.textContent = 'Gespeichert.';
+          fb.className = 'feedback';
+          document.getElementById('restart-notice').style.display = 'block';
+          Prism.toast('Konfiguration gespeichert.', 'ok', 3000);
+        } else {
+          fb.textContent = await r.text();
+          fb.className = 'feedback err';
+        }
+      } catch(e) {
+        fb.textContent = e.message;
+        fb.className = 'feedback err';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      Prism.initTabs('#main-tabs');
+      loadStatus();
+      loadValues();
+      loadConfig();
+      setInterval(loadStatus, 10000);
+      setInterval(loadValues, 10000);
+    });
+  </script>
+</body>
+</html>

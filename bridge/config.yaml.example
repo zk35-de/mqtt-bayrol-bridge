@@ -17,3 +17,7 @@ output_prefix: bayrol/pool
 
 # discovery_prefix: homeassistant
 # HA MQTT Autodiscovery Prefix (default: homeassistant)
+
+web:
+  port: 8080
+  # Web UI Port (default: 8080)

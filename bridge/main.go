@@ -26,6 +26,9 @@ type Config struct {
 	} `yaml:"ha_broker"`
 	OutputPrefix    string `yaml:"output_prefix"`
 	DiscoveryPrefix string `yaml:"discovery_prefix"`
+	Web             struct {
+		Port int `yaml:"port"`
+	} `yaml:"web"`
 }
 
 // numericVal extracts "v" field as string from Bayrol JSON {"t":"x","v":123,...}
@@ -51,9 +54,12 @@ type bridge struct {
 	ha     mqtt.Client
 	prefix string
 	serial string
+	store  *valueStore
+	status *connStatus
 }
 
 func (b *bridge) publish(subTopic, value string) {
+	b.store.set(subTopic, value)
 	topic := b.prefix + "/" + subTopic
 	t := b.ha.Publish(topic, 0, true, value)
 	t.Wait()
@@ -108,17 +114,23 @@ func main() {
 	if cfg.OutputPrefix == "" {
 		cfg.OutputPrefix = "bayrol/pool"
 	}
+	if cfg.Web.Port == 0 {
+		cfg.Web.Port = 8080
+	}
 
 	b := &bridge{
 		cfg:    cfg,
 		prefix: cfg.OutputPrefix,
 		serial: cfg.BayrolBroker.Serial,
+		store:  newValueStore(),
+		status: &connStatus{startedAt: time.Now()},
 	}
 
 	haBroker := fmt.Sprintf("tcp://%s:%d", cfg.HABroker.Host, cfg.HABroker.Port)
 	log.Printf("connecting HA broker %s", haBroker)
 	b.ha = connect(haBroker, "bayrol-bridge-ha", cfg.HABroker.Username, cfg.HABroker.Password, func(c mqtt.Client) {
 		log.Println("HA broker connected")
+		b.status.setHA(true)
 		b.publishDiscovery()
 	})
 
@@ -128,10 +140,13 @@ func main() {
 
 	connect(bayrolBroker, "bayrol-bridge-local", "", "", func(c mqtt.Client) {
 		log.Println("Bayrol broker connected, subscribing")
+		b.status.setBayrol(true)
 		if t := c.Subscribe(subTopic, 0, b.handle); t.Wait() && t.Error() != nil {
 			log.Printf("subscribe: %v", t.Error())
 		}
 	})
+
+	go b.startWebServer(fmt.Sprintf(":%d", cfg.Web.Port), cfgPath)
 
 	log.Println("bridge running")
 	select {}
