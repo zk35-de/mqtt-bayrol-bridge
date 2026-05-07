@@ -29,6 +29,59 @@ type Config struct {
 	Web             struct {
 		Port int `yaml:"port"`
 	} `yaml:"web"`
+	Mosquitto struct {
+		CertPath string `yaml:"cert_path"`
+	} `yaml:"mosquitto"`
+	Debug struct {
+		Enabled bool `yaml:"enabled"`
+	} `yaml:"debug"`
+}
+
+// applyEnvOverrides overlays environment variables on top of config file values.
+// All env vars are optional; unset vars leave the config unchanged.
+func applyEnvOverrides(cfg *Config) {
+	if v := os.Getenv("BAYROL_HOST"); v != "" {
+		cfg.BayrolBroker.Host = v
+	}
+	if v := os.Getenv("BAYROL_PORT"); v != "" {
+		if p, err := strconv.Atoi(v); err == nil {
+			cfg.BayrolBroker.Port = p
+		}
+	}
+	if v := os.Getenv("BAYROL_SERIAL"); v != "" {
+		cfg.BayrolBroker.Serial = v
+	}
+	if v := os.Getenv("HA_HOST"); v != "" {
+		cfg.HABroker.Host = v
+	}
+	if v := os.Getenv("HA_PORT"); v != "" {
+		if p, err := strconv.Atoi(v); err == nil {
+			cfg.HABroker.Port = p
+		}
+	}
+	if v := os.Getenv("HA_USERNAME"); v != "" {
+		cfg.HABroker.Username = v
+	}
+	if v := os.Getenv("HA_PASSWORD"); v != "" {
+		cfg.HABroker.Password = v
+	}
+	if v := os.Getenv("OUTPUT_PREFIX"); v != "" {
+		cfg.OutputPrefix = v
+	}
+	if v := os.Getenv("DISCOVERY_PREFIX"); v != "" {
+		cfg.DiscoveryPrefix = v
+	}
+	if v := os.Getenv("WEB_PORT"); v != "" {
+		if p, err := strconv.Atoi(v); err == nil {
+			cfg.Web.Port = p
+		}
+	}
+	if v := os.Getenv("MOSQUITTO_CERT_PATH"); v != "" {
+		cfg.Mosquitto.CertPath = v
+	}
+	if v := os.Getenv("DEBUG"); v == "true" || v == "1" {
+		cfg.Debug.Enabled = true
+	}
 }
 
 // numericVal extracts "v" field as string from Bayrol JSON {"t":"x","v":123,...}
@@ -56,6 +109,7 @@ type bridge struct {
 	serial string
 	store  *valueStore
 	status *connStatus
+	rawLog *rawLogger
 }
 
 func (b *bridge) publish(subTopic, value string) {
@@ -69,6 +123,7 @@ func (b *bridge) publish(subTopic, value string) {
 }
 
 func (b *bridge) handle(_ mqtt.Client, msg mqtt.Message) {
+	b.rawLog.log(msg.Topic(), msg.Payload())
 	for _, pub := range transform(b.serial, msg.Topic(), msg.Payload()) {
 		b.publish(pub.SubTopic, pub.Value)
 	}
@@ -111,11 +166,17 @@ func main() {
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		log.Fatalf("config parse: %v", err)
 	}
+
+	applyEnvOverrides(&cfg)
+
 	if cfg.OutputPrefix == "" {
 		cfg.OutputPrefix = "bayrol/pool"
 	}
 	if cfg.Web.Port == 0 {
 		cfg.Web.Port = 8080
+	}
+	if cfg.Mosquitto.CertPath == "" {
+		cfg.Mosquitto.CertPath = "/mosquitto/certs/bayrol-server.crt"
 	}
 
 	b := &bridge{
@@ -124,6 +185,7 @@ func main() {
 		serial: cfg.BayrolBroker.Serial,
 		store:  newValueStore(),
 		status: &connStatus{startedAt: time.Now()},
+		rawLog: newRawLogger(cfg.Debug.Enabled),
 	}
 
 	haBroker := fmt.Sprintf("tcp://%s:%d", cfg.HABroker.Host, cfg.HABroker.Port)
