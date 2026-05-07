@@ -208,6 +208,7 @@ func (b *bridge) startWebServer(addr, cfgPath string) {
 			"bayrol_connected": bayrol,
 			"uptime_s":         int(uptime.Seconds()),
 			"debug_enabled":    b.rawLog.isEnabled(),
+			"version":          version,
 		}
 		if exp := certExpiry(b.cfg.Mosquitto.CertPath); exp != nil {
 			resp["cert_expires"] = exp.UTC().Format(time.RFC3339)

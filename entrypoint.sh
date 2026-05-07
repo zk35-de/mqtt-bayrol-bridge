@@ -33,6 +33,27 @@ else
     echo "[certgen] cert valid, skipping"
 fi
 
+if [ ! -s /config.yaml ]; then
+    echo "[config] /config.yaml fehlt oder leer – schreibe Vorlage"
+    cat > /config.yaml <<'EOF'
+bayrol_broker:
+  host: localhost
+  port: 1883
+
+ha_broker:
+  host: ""
+  port: 1883
+  username: ""
+  password: ""
+
+output_prefix: bayrol/pool
+discovery_prefix: homeassistant
+
+web:
+  port: 8080
+EOF
+fi
+
 /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf &
 
 exec /bridge /config.yaml
