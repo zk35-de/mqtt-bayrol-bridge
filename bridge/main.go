@@ -15,27 +15,27 @@ import (
 
 type Config struct {
 	BayrolBroker struct {
-		Host string `yaml:"host"`
-		Port int    `yaml:"port"`
-	} `yaml:"bayrol_broker"`
+		Host string `yaml:"host" json:"host"`
+		Port int    `yaml:"port" json:"port"`
+	} `yaml:"bayrol_broker" json:"bayrol_broker"`
 	HABroker struct {
-		Host     string `yaml:"host"`
-		Port     int    `yaml:"port"`
-		Username string `yaml:"username"`
-		Password string `yaml:"password"`
-	} `yaml:"ha_broker"`
-	OutputPrefix    string `yaml:"output_prefix"`
-	DiscoveryPrefix string `yaml:"discovery_prefix"`
+		Host     string `yaml:"host"     json:"host"`
+		Port     int    `yaml:"port"     json:"port"`
+		Username string `yaml:"username" json:"username"`
+		Password string `yaml:"password" json:"password"`
+	} `yaml:"ha_broker" json:"ha_broker"`
+	OutputPrefix    string `yaml:"output_prefix"    json:"output_prefix"`
+	DiscoveryPrefix string `yaml:"discovery_prefix" json:"discovery_prefix"`
 	Web             struct {
-		Port int `yaml:"port"`
-	} `yaml:"web"`
+		Port int `yaml:"port" json:"port"`
+	} `yaml:"web" json:"web"`
 	Mosquitto struct {
-		CertPath string `yaml:"cert_path"`
-	} `yaml:"mosquitto"`
+		CertPath string `yaml:"cert_path" json:"cert_path"`
+	} `yaml:"mosquitto" json:"mosquitto"`
 	Debug struct {
-		Enabled    bool `yaml:"enabled"`
-		RawLogSize int  `yaml:"raw_log_size"`
-	} `yaml:"debug"`
+		Enabled    bool `yaml:"enabled"      json:"enabled"`
+		RawLogSize int  `yaml:"raw_log_size" json:"raw_log_size"`
+	} `yaml:"debug" json:"debug"`
 }
 
 // applyEnvOverrides overlays environment variables on top of config file values.
