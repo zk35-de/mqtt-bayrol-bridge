@@ -28,6 +28,7 @@ if needs_cert; then
         -out "$CERTS/bayrol-server.crt" \
         -days 3650 2>/dev/null
     echo "[certgen] done, expires $(openssl x509 -enddate -noout -in $CERTS/bayrol-server.crt)"
+    chown -R mosquitto:mosquitto "$CERTS"
 else
     echo "[certgen] cert valid, skipping"
 fi
